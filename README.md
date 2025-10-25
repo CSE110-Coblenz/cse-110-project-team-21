@@ -36,38 +36,68 @@ Sprint 1 >>> Monday–Wednesday
 Sprint 2 >>> Thursday–Sunday
 
 - **MileStone1-Core MVP (week5)**
+  
   sprint1
+  
     -Goal: Set up architecture and homepage
+  
     -Deliverable: TypeScript + Router, Menu screen (difficulty buttons)
+
+
   sprint2
+  
     -Goal: Game logic and result screen
+  
     -Deliverable: Basic question/answer flow + Results screen
   
+  
 -**MileStone2-Game Polish (week6)**
+
   sprint1
+
     -Goal: Add lives (hearts) and progress bar
+
     -Deliverable: Visual progress and challenge system
+    
   sprint2
+  
     -Goal: Add sound effects & animations
+    
     -Deliverable: Audio/visual feedback for correct/incorrect answers
     
+    
 -**MileStone3-UI/UX Enhancement(week7)**
+
   sprint1
+  
     -Goal: Improve visual design
+    
     -Deliverable: Cartoon-style interface, colors, typography
+    
   sprint2
+  
     -Goal: Accessibility and responsive layout
+    
     -Deliverable: Works on tablet and keyboard navigation
     
+    
 -**MileStone4-Bonus Features(week8)**
+
   sprint1
+  
     -Goal: Add optional bonus pages
+    
     -Deliverable: Mini game or reward page
+    
   sprint2
+  
     -Goal: Bug fixes and testing
+    
     -Deliverable: Functional testing and polish
     
+    
 -**MileStone5-Launch and Demo(week9-10)**
+
   sprint1
     -Goal: Final testing and deployment
     -Deliverable: Host on Netlify or other online server
