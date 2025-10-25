@@ -51,7 +51,7 @@ Sprint 2 >>> Thursday–Sunday
     -Deliverable: Basic question/answer flow + Results screen
   
   
--**MileStone2-Game Polish (week6)**
+- **MileStone2-Game Polish (week6)**
 
   sprint1
 
@@ -67,7 +67,7 @@ Sprint 2 >>> Thursday–Sunday
     -Deliverable: Audio/visual feedback for correct/incorrect answers
     
     
--**MileStone3-UI/UX Enhancement(week7)**
+- **MileStone3-UI/UX Enhancement(week7)**
 
   sprint1
   
@@ -81,9 +81,9 @@ Sprint 2 >>> Thursday–Sunday
     -Goal: Accessibility and responsive layout
     
     -Deliverable: Works on tablet and keyboard navigation
+
     
-    
--**MileStone4-Bonus Features(week8)**
+- **MileStone4-Bonus Features(week8)**
 
   sprint1
   
@@ -99,7 +99,7 @@ Sprint 2 >>> Thursday–Sunday
     -Deliverable: Functional testing and polish
     
     
--**MileStone5-Launch and Demo(week9-10)**
+- **MileStone5-Launch and Demo(week9-10)**
 
   sprint1
   
