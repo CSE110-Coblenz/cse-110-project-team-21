@@ -58,7 +58,8 @@ Sprint 2 >>> Thursday–Sunday
     -Goal: Add lives (hearts) and progress bar
 
     -Deliverable: Visual progress and challenge system
-    
+
+
   sprint2
   
     -Goal: Add sound effects & animations
@@ -73,6 +74,7 @@ Sprint 2 >>> Thursday–Sunday
     -Goal: Improve visual design
     
     -Deliverable: Cartoon-style interface, colors, typography
+
     
   sprint2
   
@@ -88,6 +90,7 @@ Sprint 2 >>> Thursday–Sunday
     -Goal: Add optional bonus pages
     
     -Deliverable: Mini game or reward page
+
     
   sprint2
   
@@ -99,8 +102,15 @@ Sprint 2 >>> Thursday–Sunday
 -**MileStone5-Launch and Demo(week9-10)**
 
   sprint1
+  
     -Goal: Final testing and deployment
+    
     -Deliverable: Host on Netlify or other online server
+
+    
   sprint2
+  
     -Goal: Record demo & presentation prep
+    
     -Deliverable: Final playable demo for the showcase
+    
