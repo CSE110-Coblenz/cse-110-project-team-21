@@ -31,6 +31,8 @@ To make spelling practice fun and accessible by combining interactive stories, c
 ---
 
 ## User Stroies（Backlog） 
+priority levels from the most to the least
+
 #### 1️. Difficulty Selection
 **As a student, I want to have different difficulty levels so that I can challenge myself.**  
 *Acceptance Criteria*
