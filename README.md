@@ -28,7 +28,60 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - **Storage:** Browser LocalStorage
 - **Design Mockups:** Figma
 
-## Backlog
+
+# User Stroies（Backlog） 
+### 1️⃣ Difficulty Selection
+**As a student, I want to have different difficulty levels so that I can challenge myself.**  
+✅ *Acceptance Criteria*
+- UI with Easy / Medium / Hard buttons  
+- Switch difficulty and start game  
+- Integrated with gameplay
+
+---
+
+### 2️⃣ Story Selection & Reading
+**As a student, I want to read short stories so I can practice reading.**  
+✅ *Acceptance Criteria*
+- Story selection page with titles  
+- “(viewed)” tag for read stories  
+- Reading page with next/previous navigation
+
+---
+
+### 3️⃣ Progress Bar
+**As a student or teacher, I want to see a progress bar so that I can track progress.**  
+✅ *Acceptance Criteria*
+- Animated progress bar during reading  
+- Updates dynamically  
+- Optional persistent storage
+
+---
+
+### 4️⃣ Spelling & Rewards
+**As a user, I want to be rewarded for correct answers so that I stay motivated.**  
+✅ *Acceptance Criteria*
+- Fill-in-the-blank sentences  
+- Correct answers added to word bank  
+- Animation or sound feedback on success
+
+---
+
+### 5️⃣ Quiz Mode (Testing Page)
+**As a student, I want to practice spelling by filling in blanks to test my understanding.**  
+✅ *Acceptance Criteria*
+- One sentence per question  
+- 3 multiple-choice options or drag-and-drop  
+- Life hearts decrease on wrong answers  
+- “Next” and “Return” buttons
+
+---
+
+### 6️⃣ Completion & Mini Games
+**As a student, I want a fun completion page and bonus mini games so that I feel rewarded.**  
+✅ *Acceptance Criteria*
+- Congratulations message  
+- “Next Story” and “Return Home” buttons  
+- Optional mini-games (Shooting / Bouncing Ball)
 
 
 ## Plan
