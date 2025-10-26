@@ -28,6 +28,7 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - **Storage:** Browser LocalStorage
 - **Design Mockups:** Figma
 
+---
 
 ## User Stroies（Backlog） 
 #### 1️. Difficulty Selection
