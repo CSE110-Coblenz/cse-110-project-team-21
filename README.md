@@ -37,7 +37,6 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - Switch difficulty and start game  
 - Integrated with gameplay
 
----
 
 #### 2️. Story Selection & Reading
 **As a student, I want to read short stories so I can practice reading.**  
@@ -46,7 +45,6 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - “(viewed)” tag for read stories  
 - Reading page with next/previous navigation
 
----
 
 #### 3️. Progress Bar
 **As a student or teacher, I want to see a progress bar so that I can track progress.**  
@@ -55,7 +53,6 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - Updates dynamically  
 - Optional persistent storage
 
----
 
 #### 4️. Spelling & Rewards
 **As a user, I want to be rewarded for correct answers so that I stay motivated.**  
@@ -64,7 +61,6 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - Correct answers added to word bank  
 - Animation or sound feedback on success
 
----
 
 ### 5️. Quiz Mode (Testing Page)
 **As a student, I want to practice spelling by filling in blanks to test my understanding.**  
@@ -74,15 +70,15 @@ To make spelling practice fun and accessible by combining interactive stories, c
 - Life hearts decrease on wrong answers  
 - “Next” and “Return” buttons
 
----
 
-### 6️⃣ Completion & Mini Games
+### 6️. Completion & Mini Games
 **As a student, I want a fun completion page and bonus mini games so that I feel rewarded.**  
 ✅ *Acceptance Criteria*
 - Congratulations message  
 - “Next Story” and “Return Home” buttons  
 - Optional mini-games (Shooting / Bouncing Ball)
 
+---
 
 ## Plan
 Sprint 1 >>> Monday–Wednesday
