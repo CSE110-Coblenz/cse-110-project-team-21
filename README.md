@@ -166,4 +166,53 @@ Sprint 2 >>> Thursday–Sunday
     -Goal: Record demo & presentation prep
     
     -Deliverable: Final playable demo for the showcase
-    
+
+
+    ---
+
+
+## MVC structure
+'''
+  spelling-game/
+├─ index.html
+├─ style.css
+└─ src/
+   ├─ types.ts
+   ├─ constants.ts
+   ├─ router.ts            # controls screen switching
+   ├─ main.ts              # app entry point
+   │
+   ├─ models/              # NEW — data layer / game state
+   │  ├─ GameState.ts      # lives, score, currentStory, currentQuestion
+   │  ├─ ProgressModel.ts  # handles progress bar + word bank
+   │  └─ Storage.ts        # optional localStorage wrapper
+   │
+   ├─ screens/
+   │  ├─ Menu/
+   │  │  ├─ MenuScreenController.ts
+   │  │  └─ MenuScreenView.ts
+   │  ├─ StorySelect/
+   │  │  ├─ StorySelectController.ts
+   │  │  └─ StorySelectView.ts
+   │  ├─ Game/
+   │  │  ├─ GameScreenController.ts   # manages reading + fill-in-blank logic
+   │  │  └─ GameScreenView.ts
+   │  └─ Results/
+   │     ├─ ResultsScreenController.ts
+   │     └─ ResultsScreenView.ts
+   │
+   ├─ ui/
+   │  └─ dom.ts            # DOM helpers (qs, createBtn, etc.)
+   │
+   └─ assets/              # NEW — images, sounds, stories
+      ├─ sounds/
+      │   ├─ correct.mp3
+      │   └─ wrong.mp3
+      ├─ images/
+      │   ├─ heart.png
+      │   └─ progress-bg.png
+      └─ stories/
+          ├─ easy.json
+          ├─ medium.json
+          └─ hard.json
+'''
