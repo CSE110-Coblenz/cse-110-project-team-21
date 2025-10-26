@@ -73,7 +73,7 @@ To make spelling practice fun and accessible by combining interactive stories, c
 
 ### 6️. Completion & Mini Games
 **As a student, I want a fun completion page and bonus mini games so that I feel rewarded.**  
-✅ *Acceptance Criteria*
+*Acceptance Criteria*
 - Congratulations message  
 - “Next Story” and “Return Home” buttons  
 - Optional mini-games (Shooting / Bouncing Ball)
