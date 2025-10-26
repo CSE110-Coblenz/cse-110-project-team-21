@@ -99,9 +99,9 @@ Sprint 2 >>> Thursday–Sunday
 
   sprint2
   
-    -Goal: Game logic and result screen
+    -Goal: Game logic , result screen , 2 mini games
   
-    -Deliverable: Basic question/answer flow + Results screen
+    -Deliverable: Basic question/answer flow + Results screen / the minimum version of the mini games
   
   
 - **MileStone2-Game Polish (week6)**
@@ -136,18 +136,18 @@ Sprint 2 >>> Thursday–Sunday
     -Deliverable: Works on tablet and keyboard navigation
 
     
-- **MileStone4-Bonus Features(week8)**
+- **MileStone4-Testing(week8)**
 
-  sprint1
+  sprint2
   
-    -Goal: Add optional bonus pages
+    -Goal: Bug fixes and testing
     
-    -Deliverable: Mini game or reward page
+    -Deliverable: Functional testing
 
     
   sprint2
   
-    -Goal: Bug fixes and testing
+    -Goal: feedback from peers / users
     
     -Deliverable: Functional testing and polish
     
