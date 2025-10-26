@@ -79,7 +79,7 @@ priority levels from the most to the least
 *Acceptance Criteria*
 - Congratulations message  
 - “Next Story” and “Return Home” buttons  
-- Optional mini-games (Shooting / Bouncing Ball)
+- Mini-games (Shooting / Bouncing Ball) to earn the life back but adding up the fun into the game
 
 ---
 
