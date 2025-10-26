@@ -81,6 +81,7 @@ To make spelling practice fun and accessible by combining interactive stories, c
 ---
 
 ## Plan
+
 Sprint 1 >>> Monday–Wednesday
 Sprint 2 >>> Thursday–Sunday
 
