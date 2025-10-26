@@ -172,7 +172,7 @@ Sprint 2 >>> Thursday–Sunday
 
 
 ## MVC structure
-'''
+```bash
   spelling-game/
 ├─ index.html
 ├─ style.css
@@ -215,4 +215,3 @@ Sprint 2 >>> Thursday–Sunday
           ├─ easy.json
           ├─ medium.json
           └─ hard.json
-'''
