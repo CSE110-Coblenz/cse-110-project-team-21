@@ -110,6 +110,8 @@ export default class App implements ScreenSwitcher {
   goHome(): void {
     this.history = [];
     this.switchToScreen({ type: "menu" }, true);
+    this.helpClosedOnce = false;
+    this.openHelp();
   }
 
   openHelp(): void {
