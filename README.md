@@ -86,32 +86,28 @@ priority levels from the most to the least
 ## Plan
 ## with 2-Week / 4-Sprint Development Plan
 
-### **Week 1**
 
-####  Sprint 1 (Mon–Wed)
+####  Sprint 1
 **Goal:** Set up the project foundation  
 **Deliverables:**
 - TypeScript + Router architecture  
 - Homepage / Menu screen (difficulty buttons)
 
-####  Sprint 2 (Thu–Sun)
+####  Sprint 2
 **Goal:** Build the playable MVP  
 **Deliverables:**
 - Core game logic (question/answer flow)  
 - Results screen  
 - Two mini-games (basic version)
 
----
 
-### **Week 2**
-
-####  Sprint 1 (Mon–Wed)
+####  Sprint 1 
 **Goal:** Add feedback and polish  
 **Deliverables:**
 - Hearts (lives) and progress bar  
 - Sound effects and animations
 
-####  Sprint 2 (Thu–Sun)
+####  Sprint 2 
 **Goal:** Final testing and presentation  
 **Deliverables:**
 - Bug fixes and UI polish  
