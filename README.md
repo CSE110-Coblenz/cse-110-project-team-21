@@ -84,91 +84,45 @@ priority levels from the most to the least
 ---
 
 ## Plan
+## with 2-Week / 4-Sprint Development Plan
 
-Sprint 1 >>> Monday–Wednesday
-Sprint 2 >>> Thursday–Sunday
+### **Week 1**
 
-- **MileStone1-Core MVP (week5)**
-  
-  sprint1
-  
-    -Goal: Set up architecture and homepage
-  
-    -Deliverable: TypeScript + Router, Menu screen (difficulty buttons)
+####  Sprint 1 (Mon–Wed)
+**Goal:** Set up the project foundation  
+**Deliverables:**
+- TypeScript + Router architecture  
+- Homepage / Menu screen (difficulty buttons)
 
+####  Sprint 2 (Thu–Sun)
+**Goal:** Build the playable MVP  
+**Deliverables:**
+- Core game logic (question/answer flow)  
+- Results screen  
+- Two mini-games (basic version)
 
-  sprint2
-  
-    -Goal: Game logic , result screen , 2 mini games
-  
-    -Deliverable: Basic question/answer flow + Results screen / the minimum version of the mini games
-  
-  
-- **MileStone2-Game Polish (week6)**
+---
 
-  sprint1
+### **Week 2**
 
-    -Goal: Add lives (hearts) and progress bar
+####  Sprint 1 (Mon–Wed)
+**Goal:** Add feedback and polish  
+**Deliverables:**
+- Hearts (lives) and progress bar  
+- Sound effects and animations
 
-    -Deliverable: Visual progress and challenge system
+####  Sprint 2 (Thu–Sun)
+**Goal:** Final testing and presentation  
+**Deliverables:**
+- Bug fixes and UI polish  
+- Deploy to Netlify (or another host)  
+- Record final demo and presentation prep
 
+---
 
-  sprint2
-  
-    -Goal: Add sound effects & animations
-    
-    -Deliverable: Audio/visual feedback for correct/incorrect answers
-    
-    
-- **MileStone3-UI/UX Enhancement(week7)**
+**Milestone:** Functional, polished, and deployable game demo ready by the end of Week2srpint2
 
-  sprint1
-  
-    -Goal: Improve visual design
-    
-    -Deliverable: Cartoon-style interface, colors, typography
-
-    
-  sprint2
-  
-    -Goal: Accessibility and responsive layout
-    
-    -Deliverable: Works on tablet and keyboard navigation
-
-    
-- **MileStone4-Testing(week8)**
-
-  sprint2
-  
-    -Goal: Bug fixes and testing
-    
-    -Deliverable: Functional testing
-
-    
-  sprint2
-  
-    -Goal: feedback from peers / users
-    
-    -Deliverable: Functional testing and polish
-    
-    
-- **MileStone5-Launch and Demo(week9-10)**
-
-  sprint1
-  
-    -Goal: Final testing and deployment
-    
-    -Deliverable: Host on Netlify or other online server
-
-    
-  sprint2
-  
-    -Goal: Record demo & presentation prep
-    
-    -Deliverable: Final playable demo for the showcase
-
-
-    ---
+---
 
 
 ## MVC structure
