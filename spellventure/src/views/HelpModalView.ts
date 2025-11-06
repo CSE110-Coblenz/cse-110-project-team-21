@@ -66,13 +66,12 @@ export default class HelpModalView {
       text: `
 How to Play:
 
-• To begin the game, drag the letters below to correctly spell “PLAY”.
-• Once the word is complete, you’ll move on to choose your difficulty.
-• Easy, Medium, and Hard levels change how much help you get.
+• To begin the game, drag the BLUE "PLAY" to the word “PLAY” displayed on screen.
+• Choose your difficulty level.
 
 Tips:
 • You start with 3 hearts.
-• Correct spelling and longer words earn more points.
+• Correct spelling & longer words earn more points.
 • You can reopen this Help screen anytime by clicking the "?" icon.
       `,
       fontSize: 20,

@@ -1,37 +1,31 @@
-// src/controllers/GameScreenController.ts
-import Konva from "konva";
+import GameScreenView from "../views/GameScreenView";
 import type { ScreenSwitcher } from "../types";
 
 export default class GameScreenController {
-  private group: Konva.Group;
+  private view: GameScreenView;
   private app: ScreenSwitcher;
 
   constructor(app: ScreenSwitcher) {
     this.app = app;
-    this.group = new Konva.Group();
-
-    const text = new Konva.Text({
-      text: "Game Screen (placeholder)",
-      fontSize: 32,
-      fill: "#333",
-      x: window.innerWidth / 2 - 200,
-      y: window.innerHeight / 2 - 20,
-      width: 400,
-      align: "center",
-    });
-
-    this.group.add(text);
+    this.view = new GameScreenView();
   }
 
-  getView() {
-    return { getGroup: () => this.group };
+  getView(): GameScreenView {
+    return this.view;
   }
 
-  show() {
-    this.group.visible(true);
+  show(): void {
+    this.view.show();
   }
 
-  hide() {
-    this.group.visible(false);
+  hide(): void {
+    this.view.hide();
+  }
+
+  // Handle responsive resizing
+  onResize(width: number, height: number): void {
+    if (typeof (this.view as any).onResize === "function") {
+      (this.view as any).onResize(width, height);
+    }
   }
 }

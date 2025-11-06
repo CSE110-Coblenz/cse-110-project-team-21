@@ -18,9 +18,9 @@ const app = new App(stage, layer);
 // Start the app on the menu/home screen
 app.switchToScreen({ type: "menu" });
 
-// Optional: keep the canvas responsive
+// keep stage sized to container on resize
 window.addEventListener("resize", () => {
-  stage.width(window.innerWidth);
-  stage.height(window.innerHeight);
-  stage.draw();
+  stage.width(container.clientWidth);
+  stage.height(container.clientHeight);
+  stage.batchDraw();
 });

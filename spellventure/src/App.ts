@@ -10,26 +10,26 @@ import NavBarController from "./controllers/NavBarController";
 import HelpModalController from "./controllers/HelpModalController";
 
 export default class App implements ScreenSwitcher {
-    private helpClosedOnce = false;
-    private stage: Konva.Stage;
-    private layer: Konva.Layer;
+  private helpClosedOnce = false;
+  private stage: Konva.Stage;
+  private layer: Konva.Layer;
 
   // Screens
-    private menuController: MenuScreenController;
-    private difficultyController: DifficultyScreenController;
-    private gameController: GameScreenController;
-    private resultsController: ResultsScreenController;
+  private menuController: MenuScreenController;
+  private difficultyController: DifficultyScreenController;
+  private gameController: GameScreenController;
+  private resultsController: ResultsScreenController;
 
   // Global UI
-    private navBarController: NavBarController;
-    private helpModalController: HelpModalController;
+  private navBarController: NavBarController;
+  private helpModalController: HelpModalController;
 
   // Simple history stack for Back behavior
-    private history: Screen[] = [];
+  private history: Screen[] = [];
 
-    constructor(stage: Konva.Stage, layer: Konva.Layer) {
-        this.stage = stage;
-        this.layer = layer;
+  constructor(stage: Konva.Stage, layer: Konva.Layer) {
+    this.stage = stage;
+    this.layer = layer;
 
     // Instantiate controllers
     this.menuController = new MenuScreenController(this);
@@ -56,6 +56,25 @@ export default class App implements ScreenSwitcher {
     // Initial state: Menu + auto-open Help once
     this.switchToScreen({ type: "menu" }, false);
     this.openHelp(); // auto show instructions on first load
+
+    window.addEventListener("resize", () => {
+      const container = this.stage.container() as HTMLDivElement;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      this.stage.width(width);
+      this.stage.height(height);
+
+      // Let each controller update its own layout
+      (this.menuController as any).onResize?.(width, height);
+      (this.difficultyController as any).onResize?.(width, height);
+      (this.gameController as any).onResize?.(width, height);
+      (this.resultsController as any).onResize?.(width, height);
+      (this.navBarController as any).onResize?.(width, height);
+      (this.helpModalController as any).onResize?.(width, height);
+
+      this.layer.batchDraw();
+    });
   }
 
   // ===== ScreenSwitcher API =====
@@ -94,15 +113,12 @@ export default class App implements ScreenSwitcher {
   }
 
   goBack(): void {
-    // Need at least 2 entries to go back (current + previous)
     if (this.history.length <= 1) {
-      // If no history to go back to, go home
       this.goHome();
       return;
     }
-    // Pop current
+
     this.history.pop();
-    // Show previous without pushing again
     const prev = this.history[this.history.length - 1];
     this.switchToScreen(prev, false);
   }
@@ -110,8 +126,14 @@ export default class App implements ScreenSwitcher {
   goHome(): void {
     this.history = [];
     this.switchToScreen({ type: "menu" }, true);
-    this.helpClosedOnce = false;
-    this.openHelp();
+
+    // ✅ Don't reopen help automatically after the first close
+    if (!this.helpClosedOnce) {
+      this.openHelp();
+    } else {
+      this.menuController.reset();
+      this.menuController.startPlayIntro();
+    }
   }
 
   openHelp(): void {
@@ -120,13 +142,12 @@ export default class App implements ScreenSwitcher {
   }
 
   closeHelp(): void {
-  this.helpModalController.hide();
-  this.layer.draw();
+    this.helpModalController.hide();
+    this.layer.draw();
 
-  if (!this.helpClosedOnce) {
-    this.helpClosedOnce = true;
-    // Start the “assemble PLAY” intro
-    this.menuController.startPlayIntro();
+    if (!this.helpClosedOnce) {
+      this.helpClosedOnce = true;
+      this.menuController.startPlayIntro();
+    }
   }
- }
 }
