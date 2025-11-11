@@ -1,0 +1,47 @@
+/**
+ * @file place.ts
+ * @brief Contains a list of silly, imaginative, or familiar places for use in the Word Link + Mad Lib game.
+ */
+
+export const places: string[] = [
+  "school",
+  "zoo",
+  "bathroom",
+  "closet",
+  "kitchen",
+  "park",
+  "moon",
+  "underbed",
+  "backyard",
+  "cave",
+  "space",
+  "volcano",
+  "jungle",
+  "mall",
+  "beach",
+  "treehouse",
+  "castle",
+  "circus",
+  "toystore",
+  "library",
+  "museum",
+  "garage",
+  "swamp",
+  "tent",
+  "bus",
+  "train",
+  "couch",
+  "pool",
+  "desert",
+  "stadium",
+  "mountain",
+  "attic",
+  "basement",
+  "bakery",
+  "laundromat",
+  "forest",
+  "classroom",
+  "fridge",
+  "playground",
+  "iceberg"
+];

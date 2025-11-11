@@ -1,16 +1,13 @@
-// src/controllers/ResultsScreenController.ts
 import Konva from "konva";
-import type { ScreenSwitcher } from "../types";
 
-export default class ResultsScreenController {
+export default class ResultsScreenView {
   private group: Konva.Group;
-  private app: ScreenSwitcher;
+  private text: Konva.Text;
 
-  constructor(app: ScreenSwitcher) {
-    this.app = app;
+  constructor() {
     this.group = new Konva.Group();
 
-    const text = new Konva.Text({
+    this.text = new Konva.Text({
       text: "Results Screen (placeholder)",
       fontSize: 32,
       fill: "#333",
@@ -20,18 +17,24 @@ export default class ResultsScreenController {
       align: "center",
     });
 
-    this.group.add(text);
+    this.group.add(this.text);
   }
 
-  getView() {
-    return { getGroup: () => this.group };
+  getGroup(): Konva.Group {
+    return this.group;
   }
 
-  show() {
+  show(): void {
     this.group.visible(true);
   }
 
-  hide() {
+  hide(): void {
     this.group.visible(false);
+  }
+
+  // Keep text centered
+  onResize(width: number, height: number): void {
+    this.text.x(width / 2 - this.text.width() / 2);
+    this.text.y(height / 2 - this.text.height() / 2);
   }
 }

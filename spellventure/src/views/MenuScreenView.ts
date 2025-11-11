@@ -1,4 +1,3 @@
-// src/views/MenuScreenView.ts
 import Konva from "konva";
 
 export default class MenuScreenView {
@@ -8,23 +7,24 @@ export default class MenuScreenView {
 
   constructor() {
     this.group = new Konva.Group();
+    this.build();
+  }
 
+  private build(): void {
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
-    // Silhouette target for "PLAY"
     this.targetWord = new Konva.Text({
       text: "PLAY",
       fontSize: 140,
       fontFamily: "Arial Black",
       fill: "rgba(0,0,0,0.1)",
-      x: centerX - 220, // wider offset for full width
+      x: centerX - 220,
       y: centerY - 180,
       align: "center",
       listening: false,
     });
 
-    // Draggable version of "PLAY"
     this.draggableWord = new Konva.Text({
       text: "PLAY",
       fontSize: 140,
@@ -37,8 +37,7 @@ export default class MenuScreenView {
       shadowBlur: 10,
     });
 
-    this.group.add(this.targetWord);
-    this.group.add(this.draggableWord);
+    this.group.add(this.targetWord, this.draggableWord);
   }
 
   getGroup(): Konva.Group {
@@ -46,26 +45,27 @@ export default class MenuScreenView {
   }
 
   startPlayIntro(onComplete: () => void): void {
-    // Reset positions/visibility
     this.draggableWord.position({
       x: window.innerWidth / 2 - 220,
       y: window.innerHeight - 250,
     });
     this.draggableWord.visible(true);
+    this.draggableWord.fill("#4f46e5"); // default purple-blue tone
 
+    // Remove any existing dragend listeners to avoid duplicates
+    this.draggableWord.off("dragend");
+    
     this.draggableWord.on("dragend", () => {
       const dx = Math.abs(this.draggableWord.x() - this.targetWord.x());
       const dy = Math.abs(this.draggableWord.y() - this.targetWord.y());
 
       if (dx < 80 && dy < 80) {
-        // Snap to silhouette
         this.draggableWord.position({
           x: this.targetWord.x(),
           y: this.targetWord.y(),
         });
-        this.draggableWord.fill("#16a34a");
+        this.draggableWord.fill("#1e3a8a");
 
-        // Simple “bounce” animation for feedback
         const anim = new Konva.Animation((frame) => {
           const scale = 1 + 0.1 * Math.sin(frame.time * 0.02);
           this.draggableWord.scale({ x: scale, y: scale });
@@ -88,4 +88,22 @@ export default class MenuScreenView {
   hide(): void {
     this.group.visible(false);
   }
+
+  // Responsive layout
+  onResize(width: number, height: number): void {
+    this.targetWord.x(width / 2 - 220);
+    this.targetWord.y(height / 2 - 180);
+    this.draggableWord.x(width / 2 - 220);
+    this.draggableWord.y(height - 250);
+  }
+
+  //Reset "PLAY" to its starting position and color
+  resetPlayPosition(): void {
+    this.draggableWord.position({
+      x: window.innerWidth / 2 - 220,
+      y: window.innerHeight - 250,
+    });
+    this.draggableWord.fill("#4f46e5"); // default blue color
+    this.draggableWord.scale({ x: 1, y: 1 });
+  }  
 }

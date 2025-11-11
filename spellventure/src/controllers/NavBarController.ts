@@ -14,15 +14,22 @@ export default class NavBarController {
     this.view.onHelpClick(() => this.app.openHelp());
   }
 
-  getView() {
+  getView(): NavBarView {
     return this.view;
   }
 
-  show() {
+  show(): void {
     this.view.show();
   }
 
-  hide() {
+  hide(): void {
     this.view.hide();
+  }
+
+  //Responsive support
+  onResize(width: number, height: number): void {
+    if (typeof (this.view as any).onResize === "function") {
+      (this.view as any).onResize(width, height);
+    }
   }
 }
