@@ -98,6 +98,16 @@ export default class App implements ScreenSwitcher {
     this.layer.batchDraw();
   }
 
+  /** Clears game-specific content from the layer without destroying screen groups */
+  private clearGameContent(): void {
+    // Get the game controller's group and remove its children
+    const gameView = this.gameController.getView();
+    if (gameView && gameView.getGroup) {
+      const gameGroup = gameView.getGroup();
+      gameGroup.destroyChildren();
+    }
+  }
+
   goBack(): void {
     if (this.history.length <= 1) {
       this.goHome();
@@ -110,6 +120,7 @@ export default class App implements ScreenSwitcher {
 
   goHome(): void {
     this.history = [];
+    this.clearGameContent();
     this.switchToScreen({ type: "menu" }, true);
 
     if (!this.helpClosedOnce) {

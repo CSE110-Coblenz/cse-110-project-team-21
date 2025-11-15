@@ -10,7 +10,7 @@ export default class WordLinkView {
   private group: Konva.Group;
   private letterBoxes: Konva.Rect[] = [];
   private letterTexts: Konva.Text[] = [];
-  private letterTiles: { tile: Konva.Group; letter: string }[] = [];
+  private letterTiles: { tile: Konva.Text; letter: string }[] = [];
   private hudGroup: Konva.Group = new Konva.Group();
 
   private submitButton: Konva.Group;
@@ -100,6 +100,7 @@ export default class WordLinkView {
       cornerRadius: 12,
       shadowColor: "rgba(0,0,0,0.3)",
       shadowBlur: 8,
+      listening: true,
     });
 
     const label = new Konva.Text({
@@ -111,9 +112,11 @@ export default class WordLinkView {
       fontSize: 22,
       fill: "#fff",
       fontStyle: "bold",
+      listening: false,
     });
 
     buttonGroup.add(button, label);
+    buttonGroup.listening(true);
     this.group.add(buttonGroup);
 
     button.on("click tap", () => {
@@ -166,42 +169,42 @@ export default class WordLinkView {
     this.group.getLayer()?.batchDraw();
   }
 
-/** Draws clickable letter tiles for the current word */
-drawLetterTiles(letters: string[]): void {
-  // Remove previous tiles cleanly
-  this.letterTiles.forEach(({ tile }) => tile.destroy());
-  this.letterTiles = [];
+  /** Draws clickable letter tiles for the current word */
+  drawLetterTiles(letters: string[]): void {
+    // Remove previous tiles cleanly
+    this.letterTiles.forEach(({ tile }) => tile.destroy());
+    this.letterTiles = [];
 
-  const startY = window.innerHeight - 250;
-  const startX = window.innerWidth / 2 - (letters.length * 60) / 2;
-  const spacing = 70;
+    const startY = window.innerHeight - 250;
+    const startX = window.innerWidth / 2 - (letters.length * 60) / 2;
+    const spacing = 70;
 
-  letters.forEach((char, i) => {
-    const tile = new Konva.Text({
-      text: char.toUpperCase(),
-      x: startX + i * spacing,
-      y: startY,
-      fontSize: 32,
-      fill: "#4f46e5",
-      fontStyle: "bold",
-      shadowColor: "rgba(0,0,0,0.25)",
-      shadowBlur: 3,
-      listening: true, // ensure Konva registers clicks
+    letters.forEach((char, i) => {
+      const tile = new Konva.Text({
+        text: char.toUpperCase(),
+        x: startX + i * spacing,
+        y: startY,
+        fontSize: 32,
+        fill: "#4f46e5",
+        fontStyle: "bold",
+        shadowColor: "rgba(0,0,0,0.25)",
+        shadowBlur: 3,
+        listening: true, // ensure Konva registers clicks
+      });
+
+      // always rebind the click handler here
+      tile.on("click tap", () => {
+        if (this.letterClickHandler) {
+          this.letterClickHandler(char.toLowerCase());
+        }
+      });
+
+      this.letterTiles.push({ tile, letter: char });
+      this.group.add(tile);
     });
 
-    // always rebind the click handler here
-    tile.on("click tap", () => {
-      if (this.letterClickHandler) {
-        this.letterClickHandler(char.toLowerCase());
-      }
-    });
-
-    this.letterTiles.push({ tile, letter: char });
-    this.group.add(tile);
-  });
-
-  this.group.getLayer()?.batchDraw();
-}
+    this.group.getLayer()?.batchDraw();
+  }
    
 
   /** Removes a tile from the letter bank once used or hinted */
@@ -314,53 +317,61 @@ drawLetterTiles(letters: string[]): void {
     this.group.getLayer()?.batchDraw();
   }
 
-/** Adds a solved word onto a clean vertical column on the left side */
-addWordToGrid(placedWord: PlacedWord): void {
-  // Persistent offset counter (so each new word stacks lower)
-  if (!(this as any)._solvedCount) (this as any)._solvedCount = 0;
-  const solvedCount = (this as any)._solvedCount++;
+  /** Adds a solved word onto a clean vertical column on the left side */
+  addWordToGrid(placedWord: PlacedWord): void {
+    // Persistent offset counter (so each new word stacks lower)
+    if (!(this as any)._solvedCount) (this as any)._solvedCount = 0;
+    const solvedCount = (this as any)._solvedCount++;
 
-  const gridGroup = new Konva.Group();
+    const gridGroup = new Konva.Group();
 
-  // Starting anchor on the left side
-  const baseX = 100; //  fixed left margin
-  const baseY = 120 + solvedCount * 50; //  stacks words downward
+    // Starting anchor on the left side
+    const baseX = 100; //  fixed left margin
+    const baseY = 120 + solvedCount * 50; //  stacks words downward
 
-  placedWord.word.split("").forEach((char, i) => {
-    const rect = new Konva.Rect({
-      x: baseX + i * 35,
-      y: baseY,
-      width: 34,
-      height: 34,
-      fill: "#f3f4f6",
-      stroke: "#000",
-      strokeWidth: 1,
-      cornerRadius: 4,
+    placedWord.word.split("").forEach((char, i) => {
+      const rect = new Konva.Rect({
+        x: baseX + i * 35,
+        y: baseY,
+        width: 34,
+        height: 34,
+        fill: "#f3f4f6",
+        stroke: "#000",
+        strokeWidth: 1,
+        cornerRadius: 4,
+      });
+
+      const text = new Konva.Text({
+        text: char.toUpperCase(),
+        x: rect.x(),
+        y: rect.y() + 4,
+        width: 34,
+        align: "center",
+        fontSize: 20,
+        fill: "#111",
+      });
+
+      gridGroup.add(rect, text);
     });
 
-    const text = new Konva.Text({
-      text: char.toUpperCase(),
-      x: rect.x(),
-      y: rect.y() + 4,
-      width: 34,
-      align: "center",
-      fontSize: 20,
-      fill: "#111",
-    });
+    this.group.add(gridGroup);
+    this.group.getLayer()?.batchDraw();
+  }
 
-    gridGroup.add(rect, text);
-  });
+  /** Returns the visible letters currently filled in boxes */
+  getVisibleWord(): string {
+    return this.letterTexts.map((t) => t.text()).join("");
+  }
 
-  this.group.add(gridGroup);
-  this.group.getLayer()?.batchDraw();
-}
-
-
-/** Returns the visible letters currently filled in boxes */
-getVisibleWord(): string {
-  return this.letterTexts.map((t) => t.text()).join("");
-}
-
+  getHintedLetters(): string[] {
+      const letters: string[] = [];
+      this.lockedHintIndices.forEach(index => {
+        if (this.letterTexts[index]) {
+          letters.push(this.letterTexts[index].text().toLowerCase());
+        }
+      });
+      return letters;
+  }
 
   // === Event registration ===
   onSubmitClicked(cb: () => void) {

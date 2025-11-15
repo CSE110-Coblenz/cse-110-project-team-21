@@ -119,6 +119,9 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
     return { getGroup: () => this.group };
   }
   show(): void {
+    if (this.group.getChildren().length === 0) {
+      this.startStoryFlow();
+    }
     this.group.visible(true);
   }
   hide(): void {

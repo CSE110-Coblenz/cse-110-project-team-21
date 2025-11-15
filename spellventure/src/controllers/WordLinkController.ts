@@ -25,7 +25,7 @@ export default class WordLinkController {
   private score = 0;
   private hearts = 3;
   private usedHints = 0;
-  private hintLetters = new Set<string>();
+  // private hintLetters = new Set<string>();
 
   constructor(app: ScreenSwitcher, wordSet: { word: string; type: string }[]) {
     this.app = app;
@@ -56,8 +56,11 @@ export default class WordLinkController {
     this.view.onSubmitClicked(async () => {
       if (submitting) return;
       submitting = true;
-      await this.submitGuess();
-      submitting = false;
+      try {
+        await this.submitGuess();
+      } finally {
+        submitting = false;
+      }
     });
 
     this.view.onRefreshClicked(() => this.refreshWord());
@@ -72,7 +75,7 @@ export default class WordLinkController {
     const firstLetter = word[0];
     this.currentGuess = "";
     this.usedHints = 0;
-    this.hintLetters.clear();
+    // this.hintLetters.clear();
 
     this.view.drawWordBoxes(firstLetter, word.length);
     const letters = this.shuffleLetters(word.slice(1).split(""));
@@ -85,7 +88,7 @@ export default class WordLinkController {
     if (this.currentGuess.length >= currentWord.length - 1) return;
 
     // Prevent reuse of same tile
-    if (this.hintLetters.has(letter)) return;
+    // if (this.hintLetters.has(letter)) return;
 
     this.currentGuess += letter;
     this.view.fillNextLetter(letter);
@@ -96,19 +99,28 @@ export default class WordLinkController {
   private refreshWord(): void {
     const currentWord = this.placedWords[this.currentWordIndex].word;
     this.currentGuess = "";
-    this.view.clearCurrentWord();
+    this.view.clearCurrentWord(); 
 
     // Force Konva to flush the clear before redrawing tiles
     const layer = this.view.getGroup().getLayer();
     layer?.batchDraw();
 
-    // Compute remaining unused letters
-    const remaining = currentWord
-      .slice(1)
-      .split("")
-      .filter((ch) => !this.hintLetters.has(ch));
+    const allNeeded = currentWord.slice(1).split("");
+    const hintedLetters = this.view.getHintedLetters();
+    const tempHinted = [...hintedLetters];
+
+    const remaining = allNeeded.filter((ch) => {
+      const hintIndex = tempHinted.indexOf(ch);
+      if (hintIndex > -1) {
+        tempHinted.splice(hintIndex, 1);
+        return false;
+      }
+
+      return true;
+    });
 
     const shuffled = this.shuffleLetters(remaining);
+
 
     // Add a short delay so new tiles attach AFTER redraw
     setTimeout(() => {
@@ -144,7 +156,7 @@ export default class WordLinkController {
     const letter = word[randomIndex];
 
     // Track hint usage
-    this.hintLetters.add(letter);
+    // this.hintLetters.add(letter);
     this.usedHints++;
 
     // Reveal visually + remove from bank
@@ -281,7 +293,7 @@ export default class WordLinkController {
     const { story, wordSet } = (this.app as any).storyData;
 
     const madLib = new MadLibPhaseController(this.app, story, wordSet);
-    layer.add(madLib.getView().getGroup());
+    this.view.getGroup().add(madLib.getView().getGroup());
     layer.batchDraw();
   }
 
