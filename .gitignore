@@ -124,3 +124,4 @@ drafts/
 private/
 *.key
 *.pem
+.npm-cache/
