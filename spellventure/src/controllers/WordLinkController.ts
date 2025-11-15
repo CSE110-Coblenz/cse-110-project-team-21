@@ -108,7 +108,7 @@ export default class WordLinkController {
     const allNeeded = currentWord.slice(1).split("");
     const hintedLetters = this.view.getHintedLetters();
     const tempHinted = [...hintedLetters];
-    
+
     const remaining = allNeeded.filter((ch) => {
       const hintIndex = tempHinted.indexOf(ch);
       if (hintIndex > -1) {
@@ -293,7 +293,7 @@ export default class WordLinkController {
     const { story, wordSet } = (this.app as any).storyData;
 
     const madLib = new MadLibPhaseController(this.app, story, wordSet);
-    layer.add(madLib.getView().getGroup());
+    this.view.getGroup().add(madLib.getView().getGroup());
     layer.batchDraw();
   }
 
