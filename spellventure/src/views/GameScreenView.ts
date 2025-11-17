@@ -8,7 +8,7 @@ export default class GameScreenView {
   constructor() {
     this.group = new Konva.Group();
 
-    // ⭐ Add gradient background
+    // ⭐ Gradient background
     this.background = new Konva.Rect({
       x: 0,
       y: 0,
@@ -18,10 +18,9 @@ export default class GameScreenView {
       fillLinearGradientEndPoint: { x: 0, y: window.innerHeight },
       fillLinearGradientColorStops: [0, "#4e54c8", 1, "#8f94fb"],
     });
+    this.group.add(this.background); // Add background first
 
-    // Background must be added BEFORE text so it stays behind
-    this.group.add(this.background);
-
+    // Centered placeholder text
     this.text = new Konva.Text({
       text: "Game Screen (placeholder)",
       fontSize: 32,
@@ -31,8 +30,6 @@ export default class GameScreenView {
       width: 400,
       align: "center",
     });
-
-    // Add the text on top
     this.group.add(this.text);
   }
 
@@ -48,7 +45,7 @@ export default class GameScreenView {
     this.group.visible(false);
   }
 
-  // Make background and text resize correctly
+  // Update sizes for window resize
   onResize(width: number, height: number): void {
     this.background.width(width);
     this.background.height(height);
