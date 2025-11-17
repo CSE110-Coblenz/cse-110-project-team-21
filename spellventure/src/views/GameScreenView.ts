@@ -1,16 +1,17 @@
+// src/views/GameScreenView.ts
 import Konva from "konva";
 
 export default class GameScreenView {
   private group: Konva.Group;
   private text: Konva.Text;
   private background: Konva.Rect;
-  private animation?: Konva.Animation;
-  private gradientPhase = 0;
+  private animation: Konva.Animation;
+  private gradientPhase: number = 0;
 
   constructor() {
     this.group = new Konva.Group();
 
-    // Gradient background
+    // ⭐ Animated gradient background
     this.background = new Konva.Rect({
       x: 0,
       y: 0,
@@ -21,11 +22,12 @@ export default class GameScreenView {
       fillLinearGradientColorStops: [0, "#4e54c8", 1, "#8f94fb"],
     });
 
+    // Add background first so it stays behind everything else
     this.group.add(this.background);
 
-    // Placeholder text
+    // Add placeholder text on top
     this.text = new Konva.Text({
-      text: "Game Screen",
+      text: "Game Screen (placeholder)",
       fontSize: 32,
       fill: "#ffffff",
       x: window.innerWidth / 2 - 200,
@@ -33,10 +35,19 @@ export default class GameScreenView {
       width: 400,
       align: "center",
     });
-
     this.group.add(this.text);
 
-    this.startBackgroundAnimation();
+    // Start gradient animation
+    // The animation will automatically redraw the layer each frame
+    this.animation = new Konva.Animation((frame) => {
+      this.gradientPhase += 0.002;
+
+      // Shift hue over time
+      const color1 = `hsl(${(this.gradientPhase * 360) % 360}, 70%, 50%)`;
+      const color2 = `hsl(${((this.gradientPhase + 0.3) * 360) % 360}, 70%, 60%)`;
+      this.background.fillLinearGradientColorStops([0, color1, 1, color2]);
+    }, this.background.getLayer()!); // Non-null since it’s added to a layer
+    this.animation.start();
   }
 
   getGroup(): Konva.Group {
@@ -51,34 +62,12 @@ export default class GameScreenView {
     this.group.visible(false);
   }
 
+  // Make background and text responsive
   onResize(width: number, height: number): void {
     this.background.width(width);
     this.background.height(height);
 
     this.text.x(width / 2 - this.text.width() / 2);
     this.text.y(height / 2 - this.text.height() / 2);
-  }
-
-  /** Animate gradient over time (working version) */
-  private startBackgroundAnimation(): void {
-    const layer = this.background.getLayer();
-    if (!layer) return;
-
-    this.animation = new Konva.Animation(() => {
-      this.gradientPhase += 0.002;
-
-      // Generate HSL colors
-      const c1 = `hsl(${(this.gradientPhase * 360) % 360}, 70%, 50%)`;
-      const c2 = `hsl(${((this.gradientPhase + 0.3) * 360) % 360}, 70%, 60%)`;
-
-      // ✅ Use setter method
-      this.background.fillLinearGradientColorStops([0, c1, 1, c2]);
-    }, layer);
-
-    this.animation.start();
-  }
-
-  stopAnimation(): void {
-    this.animation?.stop();
   }
 }
