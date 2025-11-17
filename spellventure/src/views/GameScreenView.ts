@@ -5,8 +5,6 @@ export default class GameScreenView {
   private text: Konva.Text;
   private background: Konva.Rect;
   private animation?: Konva.Animation;
-
-  // Keep track of gradient phase for animation
   private gradientPhase = 0;
 
   constructor() {
@@ -25,7 +23,7 @@ export default class GameScreenView {
 
     this.group.add(this.background);
 
-    // Placeholder text (can be replaced with actual game UI)
+    // Placeholder text
     this.text = new Konva.Text({
       text: "Game Screen",
       fontSize: 32,
@@ -38,7 +36,6 @@ export default class GameScreenView {
 
     this.group.add(this.text);
 
-    // Start the background animation
     this.startBackgroundAnimation();
   }
 
@@ -62,25 +59,25 @@ export default class GameScreenView {
     this.text.y(height / 2 - this.text.height() / 2);
   }
 
-  /** Animate gradient over time */
+  /** Animate gradient over time (working version) */
   private startBackgroundAnimation(): void {
     const layer = this.background.getLayer();
     if (!layer) return;
 
     this.animation = new Konva.Animation(() => {
-      this.gradientPhase += 0.002; // Adjust speed here
+      this.gradientPhase += 0.002;
 
-      // Calculate color shift
+      // Generate HSL colors
       const c1 = `hsl(${(this.gradientPhase * 360) % 360}, 70%, 50%)`;
       const c2 = `hsl(${((this.gradientPhase + 0.3) * 360) % 360}, 70%, 60%)`;
 
-      this.background.fillLinearGradientColorStops = [0, c1, 1, c2];
+      // ✅ Use setter method
+      this.background.fillLinearGradientColorStops([0, c1, 1, c2]);
     }, layer);
 
     this.animation.start();
   }
 
-  /** Stop animation if needed */
   stopAnimation(): void {
     this.animation?.stop();
   }
