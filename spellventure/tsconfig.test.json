@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowJs": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": false,
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["src", "tests"]
+}
