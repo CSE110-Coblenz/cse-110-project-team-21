@@ -3,15 +3,6 @@ import Konva from "konva";
 export default class GameScreenView {
   private group: Konva.Group;
   private text: Konva.Text;
-  this.background = new Konva.Rect({
-	    x: 0,
-	    y: 0,
-	    width: window.innerWidth,
-	    height: window.innerHeight,
-	    fillLinearGradientStartPoint: { x: 0, y: 0 },
-	    fillLinearGradientEndPoint: { x: 0, y: window.innerHeight },
-	    fillLinearGradientColorStops: [0, "#4e54c8", 1, "#8f94fb"],
-  });
 
   constructor() {
     this.group = new Konva.Group();
