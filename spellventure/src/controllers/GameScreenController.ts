@@ -3,7 +3,6 @@ import type { ScreenSwitcher } from "../types";
 import GameScreenView from "../views/GameScreenView";
 import WordLinkController from "./WordLinkController";
 
-// Import your word banks
 import { nouns } from "../data/nouns";
 import { verbs } from "../data/verbs";
 import { adjectives } from "../data/adjectives";
@@ -24,11 +23,11 @@ export default class GameScreenController {
     this.stage = stage;
     this.layer = layer;
 
-    // ✅ Instantiate GameScreenView with background
+    // Instantiate GameScreenView with background
     this.view = new GameScreenView();
     this.layer.add(this.view.getGroup());
 
-    // Start story + word flow
+    // Start story + WordLink flow
     this.startStoryFlow();
   }
 
@@ -48,7 +47,7 @@ export default class GameScreenController {
     this.view.onResize(width, height);
   }
 
-  /** ===== Story & WordLink Logic ===== */
+  /** Story and WordLink logic */
   private startStoryFlow(): void {
     const story = `
 ${this.getRandom(exclamations)}! Today at school, my [adjective] teacher stormed in holding a [noun]
@@ -72,20 +71,16 @@ which made the whole class [verb]! Everyone laughed and shouted "${this.getRando
   }
 
   private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
-    console.log("🎮 Launching Word Link phase with fixed story-based word set...");
     this.wordLink = new WordLinkController(this.app, wordSet);
 
     const viewObj = this.wordLink.getView();
     if (viewObj && viewObj.getGroup) {
-      this.view.getGroup().add(viewObj.getGroup()); // Add on top of background
-    } else {
-      console.error("❌ WordLinkController did not return a valid view object:", viewObj);
+      this.view.getGroup().add(viewObj.getGroup()); // Add WordLink above background
     }
 
     this.layer.batchDraw();
   }
 
-  /** ===== Utilities ===== */
   private getListByType(type: string): string[] {
     switch (type) {
       case "noun": return nouns;
