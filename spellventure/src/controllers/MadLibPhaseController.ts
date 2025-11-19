@@ -22,11 +22,18 @@ export default class MadLibPhaseController {
 
     // ✅ Build the view with the fixed story + words
     this.view = new MadLibPhaseView(story, wordSet);
+    // Register blank filled handler once
+    this.view.onBlankFilled(() => {
+      if (this.view.allBlanksFilled()) {
+        console.log("✅ Story complete! Transitioning to results screen...");
+        this.app.switchToScreen({ type: "result" });
+      }
+    });
 
     // When the player clicks a word in the word bank
     this.view.onWordClicked((word, type) => {
       const filled = this.view.fillNextBlank(word, type);
-
+      
       // If all blanks filled, go to results
       if (filled && this.view.allBlanksFilled()) {
         console.log("✅ Story complete! Transitioning to results screen...");

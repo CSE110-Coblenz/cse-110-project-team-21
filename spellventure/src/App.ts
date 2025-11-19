@@ -8,6 +8,7 @@ import ResultsScreenController from "./controllers/ResultsScreenController";
 import DifficultyScreenController from "./controllers/DifficultyScreenController";
 import NavBarController from "./controllers/NavBarController";
 import HelpModalController from "./controllers/HelpModalController";
+import MadLibPhaseController from "./controllers/MadLibPhaseController";
 
 export default class App implements ScreenSwitcher {
   private helpClosedOnce = false;
@@ -31,32 +32,71 @@ export default class App implements ScreenSwitcher {
     this.stage = stage;
     this.layer = layer;
 
+    // runtime dev flag: append ?dev=madlib to the URL to launch only MadLib phase
+    const params = new URLSearchParams(window.location.search);
+    const devMadLib = params.get("dev") === "madlib";
+
     // === Instantiate screen controllers ===
-    this.menuController = new MenuScreenController(this);
-    this.difficultyController = new DifficultyScreenController(this);
-    this.gameController = new GameScreenController(this, this.stage, this.layer); 
-    this.resultsController = new ResultsScreenController(this);
+    if (!devMadLib) {
+      this.menuController = new MenuScreenController(this);
+      this.difficultyController = new DifficultyScreenController(this);
+      this.gameController = new GameScreenController(this, this.stage, this.layer);
+      this.resultsController = new ResultsScreenController(this);
+    }
 
+    // === Global UI === (only instantiate in normal mode)
+    if (!devMadLib) {
+      this.navBarController = new NavBarController(this);
+      this.helpModalController = new HelpModalController(this);
 
-    // === Global UI ===
-    this.navBarController = new NavBarController(this);
-    this.helpModalController = new HelpModalController(this);
-
-    // === Attach all screen groups (bottom to top z-order) ===
-    this.layer.add(this.menuController.getView().getGroup());
-    this.layer.add(this.difficultyController.getView().getGroup());
-    this.layer.add(this.gameController.getView().getGroup());
-    this.layer.add(this.resultsController.getView().getGroup());
-    this.layer.add(this.navBarController.getView().getGroup());
-    this.layer.add(this.helpModalController.getView().getGroup());
+      // === Attach all screen groups (bottom to top z-order) ===
+      this.layer.add(this.menuController.getView().getGroup());
+      this.layer.add(this.difficultyController.getView().getGroup());
+      this.layer.add(this.gameController.getView().getGroup());
+      this.layer.add(this.resultsController.getView().getGroup());
+      this.layer.add(this.navBarController.getView().getGroup());
+      this.layer.add(this.helpModalController.getView().getGroup());
+    }
 
     this.stage.add(this.layer);
 
     console.log("✅ App initialized with stage:", this.stage.width(), this.stage.height());
 
     // === Initial State ===
-    this.switchToScreen({ type: "menu" }, false);
-    this.openHelp();
+    if (!devMadLib) {
+      // Normal app: show menu and help
+      this.switchToScreen({ type: "menu" }, false);
+      this.openHelp();
+    } else {
+      // Dev mode: directly launch MadLibs only (no other controllers/UI)
+      (this as any).storyData = {
+        story: `
+  Wow! Today my [adjective] teacher marched in with a [noun] and said we'd
+  study [subject] by teaching a [animal] to [verb]. It sounded [adjective],
+  but we brought our [noun] and some [food]. At recess we saw a [animal]
+  try to [verb] a [noun], and everyone shouted "Wow!"`,
+        wordSet: [
+          { word: "surprised", type: "adjective" },
+          { word: "bucket", type: "noun" },
+          { word: "hippo", type: "noun" },
+          { word: "math", type: "subject" },
+          { word: "dog", type: "animal" },
+          { word: "cheetah", type: "animal" },
+          { word: "fetch", type: "verb" },
+          { word: "scratch", type: "verb" },
+          { word: "funny", type: "adjective" },
+          { word: "snack", type: "noun" },
+          { word: "pizza", type: "food" }
+        ]
+      };
+
+      // Clear any existing children and add only the MadLib view
+      this.layer.removeChildren();
+      const madLib = new MadLibPhaseController(this, (this as any).storyData.story, (this as any).storyData.wordSet);
+      this.layer.add(madLib.getView().getGroup());
+      this.layer.batchDraw();
+    }
+    
 
     // === Handle Resizing ===
     window.addEventListener("resize", () => this.handleResize());
@@ -65,11 +105,11 @@ export default class App implements ScreenSwitcher {
   /** ===== ScreenSwitcher API ===== */
 
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
-    // Hide all screens
-    this.menuController.hide();
-    this.difficultyController.hide();
-    this.gameController.hide();
-    this.resultsController.hide();
+  // Hide all screens
+  this.menuController.hide();
+  this.difficultyController.hide();
+  this.gameController.hide();
+  this.resultsController.hide();
 
     // Show target screen
     switch (screen.type) {
@@ -90,7 +130,7 @@ export default class App implements ScreenSwitcher {
     }
 
     // Always show navbar (global HUD)
-    this.navBarController.show();
+  this.navBarController.show();
 
     // Manage navigation history
     if (pushToHistory) this.history.push(screen);
