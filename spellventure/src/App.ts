@@ -8,6 +8,7 @@ import ResultsScreenController from "./controllers/ResultsScreenController";
 import DifficultyScreenController from "./controllers/DifficultyScreenController";
 import NavBarController from "./controllers/NavBarController";
 import HelpModalController from "./controllers/HelpModalController";
+import MiniResultsScreenController from "./screens/miniResultsScreen/miniResultsScreenController";
 
 export default class App implements ScreenSwitcher {
     private helpClosedOnce = false;
@@ -20,6 +21,8 @@ export default class App implements ScreenSwitcher {
     private gameController: GameScreenController;
     private resultsController: ResultsScreenController;
 
+    private miniResultsController: MiniResultsScreenController;
+
   // Global UI
     private navBarController: NavBarController;
     private helpModalController: HelpModalController;
@@ -31,32 +34,31 @@ export default class App implements ScreenSwitcher {
         this.stage = stage;
         this.layer = layer;
 
-    // Instantiate controllers
-    this.menuController = new MenuScreenController(this);
-    this.difficultyController = new DifficultyScreenController(this);
-    this.gameController = new GameScreenController(this);
-    this.resultsController = new ResultsScreenController(this);
+        // Instantiate controllers
+        this.menuController = new MenuScreenController(this);
+        this.difficultyController = new DifficultyScreenController(this);
+        this.gameController = new GameScreenController(this);
+        this.resultsController = new ResultsScreenController(this);
 
-    this.navBarController = new NavBarController(this);
-    this.helpModalController = new HelpModalController(this);
+        this.navBarController = new NavBarController(this);
+        this.helpModalController = new HelpModalController(this);
+        this.miniResultsController = new MiniResultsScreenController(this);
 
-    // Add groups to the shared layer (z-order = add order)
-    // 1) Screens (bottom)
-    this.layer.add(this.menuController.getView().getGroup());
-    this.layer.add(this.difficultyController.getView().getGroup());
-    this.layer.add(this.gameController.getView().getGroup());
-    this.layer.add(this.resultsController.getView().getGroup());
-    // 2) Nav bar (always on top of screens)
-    this.layer.add(this.navBarController.getView().getGroup());
-    // 3) Help modal (overlay above nav + screens)
-    this.layer.add(this.helpModalController.getView().getGroup());
 
-    this.stage.add(this.layer);
+        // Add groups to the shared layer (z-order = add order)
+        this.layer.add(this.menuController.getView().getGroup());
+        this.layer.add(this.difficultyController.getView().getGroup());
+        this.layer.add(this.gameController.getView().getGroup());
+        this.layer.add(this.resultsController.getView().getGroup());
+        this.layer.add(this.navBarController.getView().getGroup());
+        this.layer.add(this.helpModalController.getView().getGroup());
 
-    // Initial state: Menu + auto-open Help once
-    this.switchToScreen({ type: "menu" }, false);
-    this.openHelp(); // auto show instructions on first load
-  }
+        this.stage.add(this.layer);
+
+        // Initial state: Menu + auto-open Help once
+        this.switchToScreen({ type: "menu" }, false);
+        this.openHelp();
+    }
 
   // ===== ScreenSwitcher API =====
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
@@ -76,12 +78,50 @@ export default class App implements ScreenSwitcher {
         break;
       case "game":
         this.gameController.show();
+        if (screen.bonusHearts && screen.bonusHearts > 0) {
+        //sent back earned hearts from mini game if any
+        this.gameController.addHearts(screen.bonusHearts);}
         break;
+
       case "result":
         this.resultsController.show();
         break;
+
+      case "mini_result":
+        this.miniResultsController.show({
+          score: screen.score,
+          hearts: screen.hearts,
+          bonusHearts: screen.bonusHearts,
+          from: screen.from,
+        });
+        return;
+
+
+      // select a mini game
+      case "miniGameSelect":
+        import("./screens/GameSelectScreen/GameSelectController").then(
+          ({ GameSelectController }) => {
+            const root = document.getElementById("container") as HTMLDivElement;
+            root.innerHTML = ""; // Clear Konva UI
+
+            const controller = new GameSelectController(root, this);
+            controller.start();
+          }
+        );
+        return;
+
+      case "drop":
+        import("./screens/WordsDropGame/WordsDropGameController").then(
+          ({ WordsDropGameController }) => {
+            const root = document.getElementById("container") as HTMLDivElement;
+            root.innerHTML = "";
+            new WordsDropGameController(root,this);   
+          }
+        );
+        return;
+
       default:
-        console.warn(`Unknown screen: ${screen.type}`);
+          console.warn("Unknown screen:", screen as any);
     }
 
     // Always show nav bar (global HUD)
@@ -128,5 +168,5 @@ export default class App implements ScreenSwitcher {
     // Start the “assemble PLAY” intro
     this.menuController.startPlayIntro();
   }
- }
+  }
 }

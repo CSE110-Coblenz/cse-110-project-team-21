@@ -113,14 +113,14 @@ export class WordBubbleGameView {
 
     private makeBubbleNode(word: string, cat: Category): Konva.Group {
             const new_COLORS = [
-            "#C8E6C9", // 薄荷绿
-            "#BBDEFB", // 天蓝
-            "#D1C4E9", // 淡紫
-            "#FFCCBC", // 桃橙
-            "#F8BBD0", // 玫瑰粉
-            "#FFF9C4"  // 柠檬黄
+            "#C8E6C9", // green
+            "#BBDEFB", // blue
+            "#D1C4E9", // purple
+            "#FFCCBC", // orange
+            "#F8BBD0", // pink
+            "#FFF9C4"  // yellow
         ];
-        // 从6种颜色中随机挑一个
+        // randomly pick a color for the vocabulary 
         const color = new_COLORS[Math.floor(Math.random() * new_COLORS.length)];
         
         const r = Math.min(CELL, 96) / 2 - MARGIN; // radius

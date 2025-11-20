@@ -1,4 +1,4 @@
-export class ResultsScreenView {
+export class miniResultsScreenView {
   constructor(
     container: string | HTMLElement,
     score: number,

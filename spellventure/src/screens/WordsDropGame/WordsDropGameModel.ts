@@ -12,8 +12,8 @@ export interface WordBlock {
   settled: boolean;
 }
 
-const GRID_COLS = 10;
-const GRID_ROWS = 15;
+const GRID_COLS = 8;
+const GRID_ROWS = 10;
 
 // Tiny word bank (you can swap in your own later)
 const NOUNS = ["cat","tree","river","cloud","lemon","desk","book","music","stone","car"];

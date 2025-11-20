@@ -1,26 +1,38 @@
 import { WordsDropGameModel } from "./WordsDropGameModel";
 import { WordsDropGameView } from "./WordsDropGameView";
-import { GameSelectController } from "../GameSelectScreen/GameSelectController";
+import type { ScreenSwitcher } from "../../types";
+
 
 const POINTS_PER_HEART = 10;
 
 export class WordsDropGameController {
   model: WordsDropGameModel;
   view: WordsDropGameView;
+  private bonusHearts = 0;
   private tickTimer?: number;
   private fallTimer?: number;
   private speedBoostTimer?: number;
-  private dropInterval = 1200; // 初始下落间隔（毫秒）
+  private dropInterval = 1200;
+  private sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
-  constructor(container: string | HTMLDivElement) {
-    this.model = new WordsDropGameModel(90); // 游戏时长 90 秒
+  constructor(container: string | HTMLDivElement, 
+    private app: ScreenSwitcher) {
+
+    console.log("[DROP] Controller constructed"); 
+    this.model = new WordsDropGameModel(90);
     this.view = new WordsDropGameView(container, this.model);
 
     this.bindKeys();
-    this.countdownThenStart(); // 倒计时开始游戏
+
+    // countdownThenStart()
+    this.countdown321();
   }
 
-  // --- 键盘控制 ---
+  // ===========================
+  // KEYBOARD INPUTS
+  // ===========================
   private bindKeys() {
     window.addEventListener("keydown", (e) => {
       if (!this.model.running) return;
@@ -50,27 +62,38 @@ export class WordsDropGameController {
     });
   }
 
-  // --- 倒计时开始 ---
-  private async countdownThenStart() {
+  // ===========================
+  // NEW COUNTDOWN (321)
+  // ===========================
+  private async countdown321() {
+    console.log("[DROP] countdown321 start");
+    // Stop game while showing countdown
     this.model.running = false;
     this.view.updateHUD(this.model.score, this.model.hearts, this.model.timeLeft);
 
-    for (let n = 3; n >= 1; n--) {
-      this.view.showOverlay(`${n}`, true);
+    // Show "3 2 1" like Bubble game
+    for (const n of ["3", "2", "1"]) {
+      console.log("show overlay:", n);
+      this.view.showOverlay(n, true);               // WordDrop uses (text, visible)
       new Audio("/sounds/beep.ogg").play().catch(() => {});
       await this.sleep(900);
     }
+
     this.view.showOverlay("", false);
 
+    // Spawn first block
     const spawned = this.model.spawn();
     if (!spawned) return this.end("Stack Overflow");
     this.view.renderPreview(spawned);
 
+    // Begin gameplay
     this.model.running = true;
     this.startTimers();
   }
 
-  // --- 下落逻辑 ---
+  // ===========================
+  // Hard drop block
+  // ===========================
   private drop() {
     const res = this.model.hardDrop();
     if (res.overflow) {
@@ -82,9 +105,13 @@ export class WordsDropGameController {
 
     if (res.cleared > 0) {
       this.model.score += res.cleared;
+
+      // Earn hearts by score
       if (this.model.score > 0 && this.model.score % POINTS_PER_HEART === 0) {
         this.model.hearts += 1;
+        this.bonusHearts += 1;
       }
+
       new Audio("/sounds/correct.ogg").play().catch(() => {});
     }
 
@@ -98,9 +125,11 @@ export class WordsDropGameController {
     this.view.renderPreview(spawned);
   }
 
-  // --- 游戏计时器 ---
+  // ===========================
+  // Game Timers
+  // ===========================
   private startTimers() {
-    // 倒计时
+    // Countdown timer
     this.tickTimer = window.setInterval(() => {
       if (!this.model.running) return;
       this.model.timeLeft--;
@@ -108,81 +137,44 @@ export class WordsDropGameController {
       if (this.model.timeLeft <= 0) this.end("Time Up");
     }, 1000);
 
-    // 方块下落
+    // Falling blocks
     this.fallTimer = window.setInterval(() => {
       if (!this.model.running) return;
       this.drop();
     }, this.dropInterval);
 
-    // 每 5 秒提速 +3%
+    // Speed increase every 5s
     this.speedBoostTimer = window.setInterval(() => {
       if (!this.model.running) return;
-      this.dropInterval *= 0.97;
+      this.dropInterval *= 0.9;
       clearInterval(this.fallTimer);
       this.fallTimer = window.setInterval(() => {
         if (!this.model.running) return;
         this.drop();
       }, this.dropInterval);
-      console.log(`Speed increased! New interval: ${this.dropInterval.toFixed(0)}ms`);
     }, 5000);
   }
 
-  // --- 游戏结束 ---
-  private end(reason: string) {
-    this.model.running = false;
-    clearInterval(this.tickTimer);
-    clearInterval(this.fallTimer);
-    clearInterval(this.speedBoostTimer);
+  // ===========================
+  // END GAME → go to result page
+  // ===========================
+    private end(reason: string) {
+      this.model.running = false;
+      clearInterval(this.tickTimer);
+      clearInterval(this.fallTimer);
+      clearInterval(this.speedBoostTimer);
 
-    this.view.showOverlay(
-      `Game Over — ${reason}\nScore ${this.model.score} • Hearts ${this.model.hearts}`,
-      true
-    );
+      // back to mini_ResultScreen
+      this.app.switchToScreen(
+        {
+          type: "mini_result",
+          score: this.model.score,
+          hearts: this.model.hearts,
+          bonusHearts: this.bonusHearts,
+          from: "drop", 
+        },
+        true
+      );
 
-    new Audio("/sounds/wrong.ogg").play().catch(() => {});
-
-    const root = document.getElementById("container") as HTMLDivElement;
-    if (!root) return;
-
-    const btns = [
-      { label: "Try it again", action: () => this.restart() },
-      { label: "Back to Mini Game Page", action: () => this.returnToMenu() },
-    ];
-
-    btns.forEach(({ label, action }, i) => {
-      const btn = document.createElement("button");
-      btn.textContent = label;
-      Object.assign(btn.style, {
-        position: "absolute",
-        left: "50%",
-        top: `${68 + i * 10}%`,
-        transform: "translate(-50%, -50%)",
-        padding: "10px 14px",
-        borderRadius: "10px",
-        border: "none",
-        fontWeight: "600",
-        cursor: "pointer",
-      });
-      btn.onclick = action;
-      root.append(btn);
-    });
-  }
-
-  private restart() {
-    const root = document.getElementById("container") as HTMLDivElement;
-    if (!root) return;
-    root.innerHTML = "";
-    new WordsDropGameController(root);
-  }
-
-  private returnToMenu() {
-    const root = document.getElementById("container") as HTMLDivElement;
-    if (!root) return;
-    root.innerHTML = "";
-    new GameSelectController(root).start();
-  }
-
-  private sleep(ms: number) {
-    return new Promise((r) => setTimeout(r, ms));
   }
 }

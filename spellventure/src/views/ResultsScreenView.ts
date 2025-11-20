@@ -1,4 +1,4 @@
-// src/controllers/ResultsScreenController.ts
+// src/controllers/MainResultsScreenController.ts
 import Konva from "konva";
 import type { ScreenSwitcher } from "../types";
 

@@ -50,7 +50,7 @@ export class WordsDropGameView {
       name: "overlayText",
       text: "",
       x: 0, y: HEIGHT / 2 - 36, width: WIDTH,
-      align: "center", fontSize: 40, fontStyle: "bold", fill: "#fff"
+      align: "center", fontSize: 140, fontStyle: "bold", fill: "#fff"
     });
     this.overlayGroup.add(dim, msg);
     this.uiLayer.add(this.overlayGroup);
@@ -111,11 +111,34 @@ export class WordsDropGameView {
   }
 
   showOverlay(text: string, visible: boolean) {
-    const t = this.overlayGroup.findOne<Konva.Text>('Text[name="overlayText"]');
-    if (t) t.text(text);
+    const overlayText = this.overlayGroup.findOne<Konva.Text>('Text[name="overlayText"]');
+    if (!overlayText) return;
+
+    overlayText.text(text);
     this.overlayGroup.visible(visible);
-    this.uiLayer.batchDraw();
+
+    // ensure overlay is on top
+    this.overlayGroup.moveToTop();
+
+    // redraw entire stage to ensure visibility
+    this.stage.draw();
+
+    if (visible && text) {
+      overlayText.scale({ x: 0.3, y: 0.3 });
+      overlayText.opacity(1);
+
+      overlayText.to({
+        scaleX: 1,
+        scaleY: 1,
+        opacity: 0.15,
+        duration: 0.9,
+        easing: Konva.Easings.EaseOut
+      });
+
+    }
   }
+
+
 
   private makeBlockNode(word: string, cat: string): Konva.Group {
     const color =

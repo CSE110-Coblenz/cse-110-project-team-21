@@ -1,9 +1,10 @@
-import { WordBubbleGameView} from "./WordBubbleGameView";
+import { WordBubbleGameView } from "./WordBubbleGameView";
 import type { Category } from "./WordBubbleGameView";
 import type { Bubble } from "./WordBubbleGameView";
-
 import { wordBank } from "../../data/wordBank";
+import type { ScreenSwitcher } from "../../types";
 
+// Utility: randomly pick k unique items from array
 function pick<T>(arr: T[], k = 1): T[] {
     const a = [...arr];
     const out: T[] = [];
@@ -12,24 +13,33 @@ function pick<T>(arr: T[], k = 1): T[] {
         out.push(a.splice(i, 1)[0]);
     }
     return out;
-    }
+}
 
-    export class WordBubbleGameController {
+export class WordBubbleGameController {
     private view: WordBubbleGameView;
+
+    // Game logic states
     private target: Category = "noun";
     private running = false;
     private timeLeft = 15;
     private score = 0;
-    private hearts = 0;
+    private hearts = 0;            // hearts used inside minigame
+    private bonusHearts = 0;       // hearts to send back to main game
     private ticker?: number;
 
-    constructor(container: string | HTMLDivElement) {
+    constructor(container: string | HTMLDivElement, private app: ScreenSwitcher) {
         this.view = new WordBubbleGameView(container);
+
+        // Back button → back to main menu
         this.view.onBack(() => (window.location.href = "/index.html"));
+
+        // Show intro flow
         this.showIntro();
     }
 
-    // --- 游戏开始前 ---
+    // ---------------------------
+    // Intro flow before game starts
+    // ---------------------------
     private async showIntro() {
         this.view.showOverlay("Word Bubble Game", "Only click the right category.\nReady?", true);
         await this.sleep(1500);
@@ -38,6 +48,7 @@ function pick<T>(arr: T[], k = 1): T[] {
         this.startGame();
     }
 
+    // Countdown overlay
     private async countdown321() {
         for (const n of ["3", "2", "1"]) {
         this.view.showOverlay(n, "", true);
@@ -47,6 +58,7 @@ function pick<T>(arr: T[], k = 1): T[] {
         this.view.showOverlay("", "", false);
     }
 
+    // Show instruction for chosen category
     private async showFindTargetSlide() {
         this.target = (["noun", "verb", "adj"] as Category[])[Math.floor(Math.random() * 3)];
         const msg = `Find all the ${this.target === "adj" ? "adjectives" : this.target + "s"}!`;
@@ -55,65 +67,56 @@ function pick<T>(arr: T[], k = 1): T[] {
         this.view.showOverlay("", "", false);
     }
 
-    // --- 游戏进行 ---
+    // ---------------------------
+    // Start gameplay loop
+    // ---------------------------
     private startGame() {
         this.running = true;
         this.timeLeft = 15;
         this.score = 0;
+        this.hearts = 0;
+        this.bonusHearts = 0; // reset bonus hearts at start
+
         this.renderNewRound();
 
+        // countdown tick
         this.ticker = window.setInterval(() => {
         if (!this.running) return;
         this.timeLeft--;
         this.view.updateHUD(this.score, this.hearts, this.timeLeft);
         if (this.timeLeft <= 0) this.endGame("Time Up");
-        }, 3000);
+        }, 1000);
     }
 
+    // ---------------------------
+    // End the game and return result to mini game
+    // ---------------------------
     private endGame(reason: string) {
         this.running = false;
         if (this.ticker) clearInterval(this.ticker);
 
-        this.view.showOverlay(
-        `Game Over — ${reason}\nScore ${this.score} • Hearts ${this.hearts}`,
-        "Try again or Back to Mini Game Page",
-        true
+        this.app.switchToScreen(
+            {
+            type: "mini_result",
+            score: this.score,
+            hearts: this.hearts,
+            bonusHearts: this.bonusHearts,
+            from: "bubble",
+            },
+            true
         );
-
-        const dom = this.view["stage"].container() as HTMLDivElement;
-        const panel = document.createElement("div");
-        panel.style.position = "absolute";
-        panel.style.left = "50%";
-        panel.style.top = "68%";
-        panel.style.transform = "translate(-50%,-50%)";
-        panel.style.display = "flex";
-        panel.style.gap = "12px";
-
-        const again = document.createElement("button");
-        again.textContent = "Try it again";
-        again.onclick = () => window.location.reload();
-
-        const back = document.createElement("button");
-        back.textContent = "Back to Mini Game Page";
-        back.onclick = () => (window.location.href = "/index.html");
-
-        for (const b of [again, back]) {
-        b.style.padding = "10px 14px";
-        b.style.borderRadius = "10px";
-        b.style.border = "none";
-        b.style.fontWeight = "600";
-        }
-
-        panel.append(again, back);
-        dom.append(panel);
     }
 
-    // --- 回合逻辑 ---
+
+
+    // ---------------------------
+    // Render a new round of words
+    // ---------------------------
     private renderNewRound() {
         const correctPool = this.poolFor(this.target);
         const wrongPool = this.poolFor(this.randomOther(this.target));
 
-        const correctWords = pick(correctPool, 2 + Math.floor(Math.random() * 2)); // 2 or 3 correct
+        const correctWords = pick(correctPool, 2 + Math.floor(Math.random() * 2)); // 2–3 correct words
         const needed = 5 - correctWords.length;
         const wrongWords = pick(wrongPool, needed);
 
@@ -124,35 +127,53 @@ function pick<T>(arr: T[], k = 1): T[] {
 
         const slots = this.pickSlots(5);
         const bubbles: Bubble[] = words.map((w, i) => ({
-        id: crypto.randomUUID(),
-        word: w.word,
-        cat: w.cat,
-        slot: slots[i],
+            id: crypto.randomUUID(),
+            word: w.word,
+            cat: w.cat,
+            slot: slots[i],
         }));
 
         this.view.renderBubbles(bubbles, (id) => this.handleClick(bubbles, id));
         this.view.updateHUD(this.score, this.hearts, this.timeLeft);
     }
 
+    // ---------------------------
+    // Handle user clicking a bubble
+    // ---------------------------
     private handleClick(bubbles: Bubble[], id: string) {
         if (!this.running) return;
         const b = bubbles.find((x) => x.id === id);
         if (!b) return;
 
+        // Correct choice
         if (b.cat === this.target) {
-        this.score += 1;
-        if (this.score > 0 && this.score % 10 === 0) this.hearts += 1;
-        new Audio("/sounds/correct.ogg").play().catch(() => {});
-        } else {
-        this.score = Math.max(0, this.score - 1);
-        new Audio("/sounds/wrong.ogg").play().catch(() => {});
-        if (this.score === 0) return this.endGame("Score reached 0");
+            this.score += 1;
+
+            // Add hearts every 10 points
+            if (this.score > 0 && this.score % 10 === 0) {
+                this.hearts += 1;       // shown in HUD
+                this.bonusHearts += 1;  // ⭐ reward sent to main game
+            }
+
+            new Audio("/sounds/correct.ogg").play().catch(() => {});
+        }
+        // Wrong choice
+        else {
+            this.score = Math.max(0, this.score - 1);
+            new Audio("/sounds/wrong.ogg").play().catch(() => {});
+            //clear the timer , then end the game
+            if (this.score === 0) {
+                clearInterval(this.ticker);
+                return this.endGame("Score reached 0");
+            }
         }
 
         this.renderNewRound();
     }
 
-    // --- 工具函数 ---
+    // ---------------------------
+    // Helper utilities
+    // ---------------------------
     private poolFor(cat: Category): string[] {
         return wordBank[cat];
     }
