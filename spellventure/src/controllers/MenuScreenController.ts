@@ -1,4 +1,3 @@
-// src/controllers/MenuScreenController.ts
 import MenuScreenView from "../views/MenuScreenView";
 import type { ScreenSwitcher } from "../types";
 
@@ -17,7 +16,6 @@ export default class MenuScreenController {
 
   startPlayIntro(): void {
     this.view.startPlayIntro(() => {
-      // When user completes “PLAY” word:
       this.app.switchToScreen({ type: "difficulty" });
     });
   }
@@ -28,5 +26,16 @@ export default class MenuScreenController {
 
   hide(): void {
     this.view.hide();
+  }
+
+  //Responsive hook
+  onResize(width: number, height: number): void {
+    if (typeof (this.view as any).onResize === "function") {
+      (this.view as any).onResize(width, height);
+    }
+  }
+
+  reset(): void {
+    this.view.resetPlayPosition();
   }
 }

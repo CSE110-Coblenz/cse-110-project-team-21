@@ -1,0 +1,47 @@
+/**
+ * @file food.ts
+ * @brief Contains a list of funny and recognizable food words for the Word Link + Mad Lib game.
+ */
+
+export const foods: string[] = [
+  "pizza",
+  "spaghetti",
+  "taco",
+  "donut",
+  "cookie",
+  "marshmallow",
+  "pancake",
+  "burger",
+  "hotdog",
+  "banana",
+  "broccoli",
+  "cupcake",
+  "burrito",
+  "pickle",
+  "nugget",
+  "sandwich",
+  "waffle",
+  "cheeseburger",
+  "icecream",
+  "popcorn",
+  "apple",
+  "onion",
+  "grape",
+  "pretzel",
+  "carrot",
+  "salad",
+  "meatball",
+  "sushi",
+  "fries",
+  "tomato",
+  "cereal",
+  "yogurt",
+  "toast",
+  "muffin",
+  "pie",
+  "pudding",
+  "lasagna",
+  "chips",
+  "bacon",
+  "corn"
+];

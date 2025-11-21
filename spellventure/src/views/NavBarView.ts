@@ -15,10 +15,12 @@ export default class NavBarView {
 
   constructor() {
     this.group = new Konva.Group();
+    this.build();
+  }
 
+  private build(): void {
     const barHeight = 60;
 
-    // background bar
     this.bg = new Konva.Rect({
       x: 0,
       y: 0,
@@ -80,28 +82,33 @@ export default class NavBarView {
     });
   }
 
-  
-  getGroup() {
+  getGroup(): Konva.Group {
     return this.group;
   }
 
-  onHomeClick(handler: () => void) {
+  onHomeClick(handler: () => void): void {
     this.homeButton.on("click tap", handler);
   }
 
-  onBackClick(handler: () => void) {
+  onBackClick(handler: () => void): void {
     this.backButton.on("click tap", handler);
   }
 
-  onHelpClick(handler: () => void) {
+  onHelpClick(handler: () => void): void {
     this.helpButton.on("click tap", handler);
   }
 
-  show() {
+  show(): void {
     this.group.visible(true);
   }
 
-  hide() {
+  hide(): void {
     this.group.visible(false);
+  }
+
+  //Adjust bar + help button position
+  onResize(width: number, _height: number): void {
+    this.bg.width(width);
+    this.helpButton.x(width - 100);
   }
 }
