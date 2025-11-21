@@ -21,8 +21,25 @@ stage.add(layer);
 // Initialize the main app
 const app = new App(stage, layer);
 
-// Start on menu
-app.switchToScreen({ type: "menu" });
+// ------------------------
+// Screen selection by URL
+// ------------------------
+
+// Read the query string from the current URL, e.g. "?screen=game&bonusHearts=2"
+const params = new URLSearchParams(window.location.search);
+
+const screenParam =
+  (params.get("screen") as
+    | "menu"
+    | "difficulty"
+    | "game"
+    | "result"
+    | "miniGameSelect") || "menu";
+
+const bonusHearts = parseInt(params.get("bonusHearts") || "0", 10);
+
+// select screen by URL 
+app.switchToScreen({ type: screenParam, bonusHearts }, false);
 
 // Keep stage sized correctly on window resize
 window.addEventListener("resize", () => {

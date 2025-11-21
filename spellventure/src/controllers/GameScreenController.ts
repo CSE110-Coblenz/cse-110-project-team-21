@@ -127,4 +127,15 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
   hide(): void {
     this.group.visible(false);
   }
+
+    // Called when returning from mini game with extra hearts
+  addHearts(amount: number) {
+    // Temporary stub: just log for now
+    console.log(`addHearts called with +${amount} hearts (stub)`);
+
+    // TODO: When main game is implemented, update hearts state here
+    // e.g. this.hearts += amount; this.view.updateHearts(this.hearts);
+  }
+  
 }
+

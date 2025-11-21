@@ -8,6 +8,7 @@ import ResultsScreenController from "./controllers/ResultsScreenController";
 import DifficultyScreenController from "./controllers/DifficultyScreenController";
 import NavBarController from "./controllers/NavBarController";
 import HelpModalController from "./controllers/HelpModalController";
+import MiniResultsScreenController from "./screens/miniResultsScreen/miniResultsScreenController";
 import MadLibPhaseController from "./controllers/MadLibPhaseController";
 
 export default class App implements ScreenSwitcher {
@@ -20,6 +21,8 @@ export default class App implements ScreenSwitcher {
   private difficultyController: DifficultyScreenController;
   private gameController: GameScreenController;
   private resultsController: ResultsScreenController;
+
+    private miniResultsController: MiniResultsScreenController;
 
   // Global UI
   private navBarController: NavBarController;
@@ -48,6 +51,7 @@ export default class App implements ScreenSwitcher {
     if (!devMadLib) {
       this.navBarController = new NavBarController(this);
       this.helpModalController = new HelpModalController(this);
+      this.miniResultsController = new MiniResultsScreenController(this);
 
       // === Attach all screen groups (bottom to top z-order) ===
       this.layer.add(this.menuController.getView().getGroup());
@@ -121,10 +125,48 @@ export default class App implements ScreenSwitcher {
         break;
       case "game":
         this.gameController.show();
+        if (screen.bonusHearts && screen.bonusHearts > 0) {
+        //sent back earned hearts from mini game if any
+        this.gameController.addHearts(screen.bonusHearts);}
         break;
+
       case "result":
         this.resultsController.show();
         break;
+
+      case "mini_result":
+        this.miniResultsController.show({
+          score: screen.score,
+          hearts: screen.hearts,
+          bonusHearts: screen.bonusHearts,
+          from: screen.from,
+        });
+        return;
+
+
+      // select a mini game
+      case "miniGameSelect":
+        import("./screens/GameSelectScreen/GameSelectController").then(
+          ({ GameSelectController }) => {
+            const root = document.getElementById("container") as HTMLDivElement;
+            root.innerHTML = ""; // Clear Konva UI
+
+            const controller = new GameSelectController(root, this);
+            controller.start();
+          }
+        );
+        return;
+
+      case "drop":
+        import("./screens/WordsDropGame/WordsDropGameController").then(
+          ({ WordsDropGameController }) => {
+            const root = document.getElementById("container") as HTMLDivElement;
+            root.innerHTML = "";
+            new WordsDropGameController(root,this);   
+          }
+        );
+        return;
+
       default:
         console.warn(`⚠️ Unknown screen type: ${screen.type}`);
     }

@@ -1,4 +1,7 @@
 import Konva from "konva";
+import { SoundManager } from "../utils/SoundManager"; 
+
+const width = window.innerWidth;
 
 export default class NavBarView {
   private group: Konva.Group;
@@ -6,6 +9,9 @@ export default class NavBarView {
   private backButton: Konva.Text;
   private helpButton: Konva.Text;
   private bg: Konva.Rect;
+  private soundIcon: Konva.Text;
+
+  
 
   constructor() {
     this.group = new Konva.Group();
@@ -40,6 +46,7 @@ export default class NavBarView {
       y: 18,
     });
 
+    // help button
     this.helpButton = new Konva.Text({
       text: "❓ Help",
       fontSize: 20,
@@ -48,7 +55,31 @@ export default class NavBarView {
       y: 18,
     });
 
+    this.helpButton.x(width - 60);
+    this.helpButton.y(12);
+
     this.group.add(this.bg, this.homeButton, this.backButton, this.helpButton);
+    this.group.visible(true);
+
+    //add a Sound Button --Yanhua11/15
+    this.soundIcon = new Konva.Text({
+      text: SoundManager.isEnabled() ? "🔊" : "🔇",
+      fontSize: 20,
+      fill: "#e5e7eb",
+    });
+    this.soundIcon.x(this.helpButton.x() - 40); // <-- put on the left of the '?' by 40px
+    this.soundIcon.y(this.helpButton.y());
+
+    // === Add to group ===
+    this.group.add(this.soundIcon);
+    this.group.add(this.helpButton);
+
+    // === Click event ===
+    this.soundIcon.on("click tap", () => {
+      const enabled = SoundManager.toggle();
+      this.soundIcon.text(enabled ? "🔊" : "🔇");
+      this.soundIcon.getLayer()?.batchDraw();
+    });
   }
 
   getGroup(): Konva.Group {
