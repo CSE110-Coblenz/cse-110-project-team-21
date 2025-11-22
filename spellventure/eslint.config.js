@@ -12,6 +12,25 @@ export default [
         ecmaVersion: "latest",
         sourceType: "module",
       },
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        HTMLElement: "readonly",
+        HTMLDivElement: "readonly",
+        HTMLButtonElement: "readonly",
+        HTMLMediaElement: "readonly",
+        HTMLAudioElement: "readonly",
+        Audio: "readonly",
+        localStorage: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        fetch: "readonly",
+        crypto: "readonly",
+      },
     },
     plugins: {
       "@typescript-eslint": ts,
@@ -19,7 +38,11 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...ts.configs.recommended.rules,
-      "no-unused-vars": "warn",
+
+      "no-console": "off",
+      "no-undef": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];
