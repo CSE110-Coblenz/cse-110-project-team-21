@@ -16,11 +16,7 @@
 name: CI
 
 # Trigger conditions for the pipeline.
-on:
-  push:
-    branches: [main] # Run CI on all pushes to `main`
-  pull_request:
-    branches: [main] # Run CI on all PRs into `main`
+on: [push, pull_request]
 
 jobs:
   build:
