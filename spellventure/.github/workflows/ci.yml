@@ -16,7 +16,7 @@
 
 name: CI
 
-# Trigger conditions for the pipeline.
+# Trigger conditions for the pipeline!
 on: [push, pull_request]
 
 jobs:
