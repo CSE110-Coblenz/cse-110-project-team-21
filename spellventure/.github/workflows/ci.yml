@@ -2,54 +2,56 @@
 # GitHub Actions CI Pipeline for Spellventure
 # ============================================
 # This workflow runs automatically whenever:
-#   - Someone pushes to main
-#   - Someone creates or updates a PR into main
+#   - Someone pushes to any branch
+#   - Someone opens or updates a PR into main
 #
+# Because our actual project lives inside /spellventure,
+# we tell GitHub Actions to run npm commands IN THAT FOLDER.
 #
-# What it does:
-#   1. Checks out the repository
-#   2. Installs Node.js (consistent version for all teammates)
-#   3. Installs dependencies (npm install)
-#   4. Runs ESLint (fails CI if there are linting errors)
-#   5. Builds the project (vite build)
+# What this CI does:
+#   1. Checks out the repo
+#   2. Uses Node.js v18
+#   3. Installs dependencies from spellventure/package.json
+#   4. Runs ESLint
+#   5. Builds with Vite (npm run build)
 # ============================================
 
 name: CI
 
-# Trigger conditions for the pipeline!
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # GitHub-hosted runner (Linux VM)
+    runs-on: ubuntu-latest
 
+    # All "run:" commands below will execute inside /spellventure
     defaults:
       run:
         working-directory: spellventure
 
     steps:
-      # Step 1: Checkout the repo into the CI machine
+      # Step 1 — Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Install Node.js and set it up with caching
-      # This ensures all teammates and CI use the same Node version
+      # Step 2 — Install Node + use npm cache
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18 # You can change this later if needed
-          cache: "npm" # Cache dependencies for faster CI
+          node-version: 18
+          cache: "npm"
+          cache-dependency-path: spellventure/package-lock.json
 
-      # Step 3: Install dependencies from package.json
+      # Step 3 — Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      # Step 4: Run ESLint
-      # If ESLint finds errors, CI fails and PR cannot merge
+      # Step 4 — Run ESLint (fails pipeline if errors)
       - name: Run ESLint
         run: npm run lint
 
-      # Step 5: Build the project.
-      # This ensures the code compiles and Vite doesn’t error
+      # Step 5 — Build project (vite build)
       - name: Build project
         run: npm run build --if-present
