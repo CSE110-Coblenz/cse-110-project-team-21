@@ -5,6 +5,7 @@
 #   - Someone pushes to main
 #   - Someone creates or updates a PR into main
 #
+#
 # What it does:
 #   1. Checks out the repository
 #   2. Installs Node.js (consistent version for all teammates)
