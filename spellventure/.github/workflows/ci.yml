@@ -1,0 +1,50 @@
+# ============================================
+# GitHub Actions CI Pipeline for Spellventure
+# ============================================
+# This workflow runs automatically whenever:
+#   - Someone pushes to main
+#   - Someone creates or updates a PR into main
+#
+# What it does:
+#   1. Checks out the repository
+#   2. Installs Node.js (consistent version for all teammates)
+#   3. Installs dependencies (npm install)
+#   4. Runs ESLint (fails CI if there are linting errors)
+#   5. Builds the project (vite build)
+# ============================================
+
+name: CI
+
+# Trigger conditions for the pipeline.
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # GitHub-hosted runner (Linux VM)
+
+    steps:
+      # Step 1: Checkout the repo into the CI machine
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install Node.js and set it up with caching
+      # This ensures all teammates and CI use the same Node version
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # You can change this later if needed
+          cache: "npm" # Cache dependencies for faster CI
+
+      # Step 3: Install dependencies from package.json
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Run ESLint
+      # If ESLint finds errors, CI fails and PR cannot merge
+      - name: Run ESLint
+        run: npm run lint
+
+      # Step 5: Build the project.
+      # This ensures the code compiles and Vite doesn’t error
+      - name: Build project
+        run: npm run build --if-present
