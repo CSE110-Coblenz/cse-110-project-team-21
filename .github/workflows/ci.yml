@@ -21,7 +21,14 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest # GitHub-hosted runner (Linux VM)
+    runs-on:
+      ubuntu-latest # GitHub-hosted runner (Linux VM)
+
+
+      # All run commands below will execute inside /spellventure
+    defaults:
+      run:
+        working-directory: spellventure
 
     steps:
       # Step 1: Checkout the repo into the CI machine
@@ -30,11 +37,12 @@ jobs:
 
       # Step 2: Install Node.js and set it up with caching
       # This ensures all teammates and CI use the same Node version
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18 # You can change this later if needed
           cache: "npm" # Cache dependencies for faster CI
+          cache-dependency-path: spellventure/package-lock.json
 
       # Step 3: Install dependencies from package.json
       - name: Install dependencies
