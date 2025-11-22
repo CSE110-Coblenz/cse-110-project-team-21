@@ -48,7 +48,7 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # Step 5: Build the project
+      # Step 5: Build the project.
       # This ensures the code compiles and Vite doesn’t error
       - name: Build project
         run: npm run build --if-present
