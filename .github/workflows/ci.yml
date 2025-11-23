@@ -36,6 +36,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: "npm"
+          cache-dependency-path: spellventure/package-lock.json
 
       # Step 3 — Install dependencies
       - name: Install dependencies
