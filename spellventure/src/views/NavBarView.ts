@@ -55,8 +55,8 @@ export default class NavBarView {
       y: 18,
     });
 
-    this.helpButton.x(width - 60);
-    this.helpButton.y(12);
+    this.helpButton.x(width - 100);
+    this.helpButton.y(18);
 
     this.group.add(this.bg, this.homeButton, this.backButton, this.helpButton);
     this.group.visible(true);
@@ -68,7 +68,7 @@ export default class NavBarView {
       fill: "#e5e7eb",
     });
     this.soundIcon.x(this.helpButton.x() - 40); // <-- put on the left of the '?' by 40px
-    this.soundIcon.y(this.helpButton.y());
+    this.soundIcon.y(18);
 
     // === Add to group ===
     this.group.add(this.soundIcon);
