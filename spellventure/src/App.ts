@@ -110,32 +110,54 @@ export default class App implements ScreenSwitcher {
 
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
   // Hide all screens
-  this.menuController.hide();
-  this.difficultyController.hide();
-  this.gameController.hide();
-  this.resultsController.hide();
+  this.menuController?.hide?.();
+  this.difficultyController?.hide?.();
+  this.gameController?.hide?.();
+  this.resultsController?.hide?.();
 
     // Show target screen
     switch (screen.type) {
       case "menu":
-        this.menuController.show();
+        this.menuController?.show?.();
         break;
       case "difficulty":
         this.difficultyController.show();
         break;
       case "game":
-        this.gameController.show();
-        if (screen.bonusHearts && screen.bonusHearts > 0) {
-        //sent back earned hearts from mini game if any
-        this.gameController.addHearts(screen.bonusHearts);}
+        this.gameController?.show?.();
+
+        // If requested, resume directly to the Mad Libs or WordLink phase inside the game
+        // Do this BEFORE applying bonusHearts so the previous hearts state is restored first.
+          // Log incoming screen flags for diagnostics
+          console.log('App.switchToScreen: game screen flags ->', {
+            openMadLib: (screen as any).openMadLib,
+            openWordLink: (screen as any).openWordLink,
+            bonusHearts: (screen as any).bonusHearts,
+          });
+
+          if ((screen as any).openMadLib) {
+            console.log('App.switchToScreen: resuming to MadLib phase');
+            (this.gameController as any)?.resumeToMadLib?.();
+          }
+
+          if ((screen as any).openWordLink) {
+            console.log('App.switchToScreen: resuming to WordLink phase');
+            (this.gameController as any)?.resumeToWordLink?.();
+          }
+
+          if ((screen as any).bonusHearts && (screen as any).bonusHearts > 0) {
+            // sent back earned hearts from mini game if any
+            console.log('App.switchToScreen: applying bonusHearts ->', (screen as any).bonusHearts);
+            this.gameController?.addHearts?.((screen as any).bonusHearts);
+          }
         break;
 
       case "result":
-        this.resultsController.show();
+        this.resultsController?.show?.();
         break;
 
       case "mini_result":
-        this.miniResultsController.show({
+        this.miniResultsController?.show?.({
           score: screen.score,
           hearts: screen.hearts,
           bonusHearts: screen.bonusHearts,
@@ -172,7 +194,7 @@ export default class App implements ScreenSwitcher {
     }
 
     // Always show navbar (global HUD)
-  this.navBarController.show();
+  this.navBarController?.show?.();
 
     // Manage navigation history
     if (pushToHistory) this.history.push(screen);

@@ -6,6 +6,7 @@
 import Konva from "konva";
 import type { ScreenSwitcher } from "../types";
 import WordLinkController from "./WordLinkController";
+import MadLibPhaseController from "./MadLibPhaseController";
 
 // Import your data banks
 import { nouns } from "../data/nouns";
@@ -22,6 +23,9 @@ export default class GameScreenController {
   private stage: Konva.Stage;
   private layer: Konva.Layer;
   private wordLink?: WordLinkController;
+  private madLibController?: MadLibPhaseController;
+  private pendingBonusHearts = 0;
+  private pendingOpenWordLink = false;
 
   constructor(app: ScreenSwitcher, stage: Konva.Stage, layer: Konva.Layer) {
     this.app = app;
@@ -130,11 +134,127 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
 
     // Called when returning from mini game with extra hearts
   addHearts(amount: number) {
-    // Temporary stub: just log for now
-    console.log(`addHearts called with +${amount} hearts (stub)`);
+    console.log(`GameScreenController.addHearts called with +${amount} hearts`);
+    if (!amount || amount <= 0) return;
+    // If MadLib phase is already instantiated under this controller, forward immediately
+    if (this.madLibController) {
+      try {
+        (this.madLibController as any).addHearts(amount);
+      } catch (err) {
+        console.warn("Failed to apply hearts to existing MadLib controller:", err);
+      }
+      return;
+    }
 
-    // TODO: When main game is implemented, update hearts state here
-    // e.g. this.hearts += amount; this.view.updateHearts(this.hearts);
+    // If WordLink phase is instantiated, forward
+    if (this.wordLink) {
+      try {
+        (this.wordLink as any).addHearts(amount);
+      } catch (err) {
+        console.warn("Failed to apply hearts to existing WordLink controller:", err);
+      }
+      return;
+    }
+
+    // Otherwise store and apply when the appropriate phase is created
+    console.log(`No active phase controller: queueing ${amount} pending hearts (was ${this.pendingBonusHearts})`);
+    this.pendingBonusHearts += amount;
+  }
+  
+  /** Resume directly to the Mad Libs phase (used after returning from mini-game) */
+  resumeToMadLib(): void {
+    const storyData = (this.app as any).storyData;
+    if (!storyData) {
+      console.warn('No storyData available to resume MadLib phase.');
+      return;
+    }
+
+    // Clear existing children and launch the MadLib phase directly into this controller's group
+    this.group.destroyChildren();
+    this.layer.batchDraw();
+    this.madLibController = new MadLibPhaseController(this.app, storyData.story, storyData.wordSet);
+    this.group.add(this.madLibController.getView().getGroup());
+    this.layer.batchDraw();
+
+    // If any pending hearts were awarded while the mini-game ran, apply them now
+    // Restore previous exact MadLib hearts if available (saved to sessionStorage before redirect)
+    try {
+      const prev = sessionStorage.getItem('madlib_prev_hearts');
+      console.log('resumeToMadLib: read madlib_prev_hearts from sessionStorage ->', prev);
+      if (prev !== null) {
+        const prevN = parseInt(prev, 10);
+        if (!isNaN(prevN)) {
+          try {
+            console.log('resumeToMadLib: setting MadLib hearts to previous value', prevN);
+            (this.madLibController as any).setHearts(prevN);
+          } catch (err) {
+            console.warn('Failed to set previous MadLib hearts:', err);
+          }
+        }
+      }
+      // Clear stored value once consumed
+      sessionStorage.removeItem('madlib_prev_hearts');
+    } catch (err) {
+      console.warn('resumeToMadLib: sessionStorage error', err);
+    }
+
+    if (this.pendingBonusHearts > 0) {
+      console.log('resumeToMadLib: applying pendingBonusHearts ->', this.pendingBonusHearts);
+      try {
+        (this.madLibController as any).addHearts(this.pendingBonusHearts);
+      } catch (err) {
+        console.warn('Failed to apply pending bonus hearts to MadLib:', err);
+      }
+      this.pendingBonusHearts = 0;
+    }
+  }
+
+  /** Resume directly to the WordLink phase (used after returning from mini-game) */
+  resumeToWordLink(): void {
+    const storyData = (this.app as any).storyData;
+    if (!storyData) {
+      console.warn('No storyData available to resume WordLink phase.');
+      return;
+    }
+
+    // Clear existing children and launch the WordLink phase directly into this controller's group
+    this.group.destroyChildren();
+    this.layer.batchDraw();
+
+    this.wordLink = new WordLinkController(this.app, storyData.wordSet);
+    this.group.add(this.wordLink.getView().getGroup());
+    this.layer.batchDraw();
+
+    // Restore previous exact WordLink hearts if available (saved to sessionStorage before redirect)
+    try {
+      const prev = sessionStorage.getItem('wordlink_prev_hearts');
+      console.log('resumeToWordLink: read wordlink_prev_hearts from sessionStorage ->', prev);
+      if (prev !== null) {
+        const prevN = parseInt(prev, 10);
+        if (!isNaN(prevN)) {
+          try {
+            console.log('resumeToWordLink: setting WordLink hearts to previous value', prevN);
+            (this.wordLink as any).setHearts(prevN);
+          } catch (err) {
+            console.warn('Failed to set previous WordLink hearts:', err);
+          }
+        }
+      }
+      // Clear stored value once consumed
+      sessionStorage.removeItem('wordlink_prev_hearts');
+    } catch (err) {
+      console.warn('resumeToWordLink: sessionStorage error', err);
+    }
+
+    if (this.pendingBonusHearts > 0) {
+      console.log('resumeToWordLink: applying pendingBonusHearts ->', this.pendingBonusHearts);
+      try {
+        (this.wordLink as any).addHearts(this.pendingBonusHearts);
+      } catch (err) {
+        console.warn('Failed to apply pending bonus hearts to WordLink:', err);
+      }
+      this.pendingBonusHearts = 0;
+    }
   }
   
 }

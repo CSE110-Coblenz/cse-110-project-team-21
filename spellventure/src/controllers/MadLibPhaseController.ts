@@ -11,6 +11,15 @@ import type { ScreenSwitcher } from "../types";
 export default class MadLibPhaseController {
   private view: MadLibPhaseView;
   private app: ScreenSwitcher;
+  
+  /** Expose methods for external controllers to adjust hearts */
+  addHearts(n: number) {
+    (this.view as any).addHearts?.(n);
+  }
+
+  setHearts(n: number) {
+    (this.view as any).setHearts?.(n);
+  }
 
   /**
    * @param app        The App controller

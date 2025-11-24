@@ -67,6 +67,19 @@ export default class WordLinkController {
     this.view.onHintClicked(() => this.useHint());
   }
 
+  /** Apply bonus hearts (called when returning from mini-games) */
+  addHearts(n: number) {
+    if (!n || n <= 0) return;
+    this.hearts += n;
+    this.view.updateHUD(this.score, this.hearts);
+  }
+
+  /** Set exact hearts value (used when restoring previous state) */
+  setHearts(n: number) {
+    this.hearts = n;
+    this.view.updateHUD(this.score, this.hearts);
+  }
+
   /** === Core gameplay === */
 
   /** Loads and draws the current target word. */
@@ -230,56 +243,25 @@ export default class WordLinkController {
 
   /** Mini-game placeholder when hearts reach 0. */
   private triggerMiniGame(onResume: () => void): void {
-    const layer = this.view.getGroup().getLayer();
-    if (!layer) return;
+    // Persist current hearts so we can restore exact state when returning.
+    try {
+      console.log('WordLinkController.triggerMiniGame: saving wordlink_prev_hearts ->', this.hearts);
+      sessionStorage.setItem("wordlink_prev_hearts", String(this.hearts));
+    } catch (e) {
+      // ignore storage errors
+    }
 
-    const overlay = new Konva.Rect({
-      x: 0,
-      y: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      fill: "rgba(0,0,0,0.8)",
-    });
-
-    const text = new Konva.Text({
-      text: "💥 Mini Game Placeholder 💥\nTap Resume to Continue",
-      fontSize: 28,
-      fill: "#fff",
-      width: window.innerWidth,
-      align: "center",
-      y: window.innerHeight / 2 - 80,
-    });
-
-    const button = new Konva.Rect({
-      x: window.innerWidth / 2 - 100,
-      y: window.innerHeight / 2 + 40,
-      width: 200,
-      height: 60,
-      fill: "#4f46e5",
-      cornerRadius: 10,
-    });
-
-    const label = new Konva.Text({
-      text: "Resume",
-      fontSize: 26,
-      fill: "#fff",
-      width: 200,
-      align: "center",
-      x: window.innerWidth / 2 - 100,
-      y: window.innerHeight / 2 + 55,
-    });
-
-    button.on("click tap", () => {
-      overlay.destroy();
-      text.destroy();
-      button.destroy();
-      label.destroy();
-      layer.draw();
+    // Redirect to the mini-game selection page and include a returnTo marker
+    try {
+      const url = new URL("/index.html", window.location.origin);
+      url.searchParams.set("screen", "miniGameSelect");
+      url.searchParams.set("returnTo", "game_openWordLink");
+      console.log('WordLinkController.triggerMiniGame: redirecting to', url.toString());
+      window.location.href = url.toString();
+    } catch (err) {
+      console.error("Failed to redirect to mini game selection, resuming game instead.", err);
       onResume();
-    });
-
-    layer.add(overlay, text, button, label);
-    layer.draw();
+    }
   }
 
   /** Launches the Mad Libs phase. */

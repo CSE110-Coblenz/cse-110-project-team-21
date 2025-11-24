@@ -61,6 +61,9 @@
         // to open the "miniGameSelect" screen
         const url = new URL("/index.html", window.location.origin);
         url.searchParams.set("screen", "miniGameSelect");
+        // Inform the mini-game to return to the main game and open MadLibs when finished
+        // (mini-games can read this param and redirect back with bonusHearts/openMadLib)
+        url.searchParams.set("returnTo", "game_openMadLib");
 
         // Optionally pass back game/score/hearts if needed
         if (game) url.searchParams.set("game", game);
@@ -77,8 +80,11 @@
 
     backMain.onclick = () => {
         // Go back to the main menu / PLAY screen
+        // Redirect back to the main game and request opening the Mad Libs phase
         const url = new URL("/index.html", window.location.origin);
-        url.searchParams.set("screen", "menu");
+        url.searchParams.set("screen", "game");
+        url.searchParams.set("bonusHearts", "1");
+        url.searchParams.set("openMadLib", "true");
         window.location.href = url.toString();
     };
 
