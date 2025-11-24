@@ -37,9 +37,14 @@ const screenParam =
     | "miniGameSelect") || "menu";
 
 const bonusHearts = parseInt(params.get("bonusHearts") || "0", 10);
+const openMadLib = params.get("openMadLib") === "true";
+const openWordLink = params.get("openWordLink") === "true";
 
-// select screen by URL 
-app.switchToScreen({ type: screenParam, bonusHearts }, false);
+// Debug: log parsed URL flags so resume flow can be traced
+console.log('main.ts: parsed screen=', screenParam, 'bonusHearts=', bonusHearts, 'openMadLib=', openMadLib, 'openWordLink=', openWordLink);
+
+// select screen by URL
+app.switchToScreen({ type: screenParam, bonusHearts, openMadLib, openWordLink } as any, false);
 
 // Keep stage sized correctly on window resize
 window.addEventListener("resize", () => {

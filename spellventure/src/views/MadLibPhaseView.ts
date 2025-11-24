@@ -546,56 +546,33 @@ private showChoicePopup(blankNode: Konva.Text, expectedType: string): void {
 
   /** === MINI GAME PLACEHOLDER === */
   private triggerMiniGame(onResume: () => void): void {
-    const layer = this.group.getLayer();
-    if (!layer) return;
-
-    const overlay = new Konva.Rect({
-      x: 0,
-      y: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      fill: "rgba(0,0,0,0.8)",
-    });
-
-    const text = new Konva.Text({
-      text: "💥 Mini Game Placeholder 💥\nTap Resume to Continue",
-      fontSize: 28,
-      fill: "#fff",
-      width: window.innerWidth,
-      align: "center",
-      y: window.innerHeight / 2 - 80,
-    });
-
-    const button = new Konva.Rect({
-      x: window.innerWidth / 2 - 100,
-      y: window.innerHeight / 2 + 40,
-      width: 200,
-      height: 60,
-      fill: "#4f46e5",
-      cornerRadius: 10,
-    });
-
-    const label = new Konva.Text({
-      text: "Resume",
-      fontSize: 26,
-      fill: "#fff",
-      width: 200,
-      align: "center",
-      x: window.innerWidth / 2 - 100,
-      y: window.innerHeight / 2 + 55,
-    });
-
-    button.on("click tap", () => {
-      overlay.destroy();
-      text.destroy();
-      button.destroy();
-      label.destroy();
-      layer.draw();
+    // Redirect to the mini-game selection page instead of showing the placeholder overlay.
+    // This navigates back to the main app and asks it to open the mini-game selection screen.
+    try {
+      // Persist current hearts so we can restore exact state when the player returns.
+      try {
+        console.log('MadLibPhaseView.triggerMiniGame: saving madlib_prev_hearts ->', this.hearts);
+        sessionStorage.setItem('madlib_prev_hearts', String(this.hearts));
+      } catch (e) {
+        console.warn('MadLibPhaseView.triggerMiniGame: failed to write sessionStorage', e);
+        // ignore sessionStorage errors (e.g., in stricter embed contexts)
+      }
+      const url = new URL('/index.html', window.location.origin);
+      url.searchParams.set('screen', 'miniGameSelect');
+      // Navigate now — the app will handle loading the mini-game selection UI.
+      window.location.href = url.toString();
+    } catch (err) {
+      // Fallback: if URL construction fails, just call onResume to let the caller recover
+      console.error('Failed to redirect to mini game selection, resuming game instead.', err);
       onResume();
-    });
+    }
+  }
 
-    layer.add(overlay, text, button, label);
-    layer.draw();
+  /** Allow external controllers to set hearts explicitly (used when resuming after mini-game) */
+  setHearts(n: number): void {
+    this.hearts = n;
+    if (this.heartText) this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+    this.group.getLayer()?.batchDraw();
   }
 
   /** === HELPERS === */
@@ -621,5 +598,14 @@ private showChoicePopup(blankNode: Konva.Text, expectedType: string): void {
 
   getGroup(): Konva.Group {
     return this.group;
+  }
+
+  /** Increment hearts (used when returning from mini-games) */
+  addHearts(n: number): void {
+    if (n <= 0) return;
+    this.hearts += n;
+    this.flashFeedback(`💖 Gained ${n} heart${n > 1 ? 's' : ''}!`);
+    this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+    this.group.getLayer()?.batchDraw();
   }
 }
