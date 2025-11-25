@@ -20,7 +20,7 @@ export interface StoryBlank {
 }
 
 /**
- * School Day Story (15 blanks total)
+ * School Day Story (12 blanks total)
  *
  * Today at school, my [ADJECTIVE1] teacher stormed in holding a [NOUN1] and
  * announced we’d be studying [SUBJECT] by training a [ANIMAL1] to [VERB1].

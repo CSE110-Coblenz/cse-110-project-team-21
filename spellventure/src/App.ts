@@ -1,4 +1,19 @@
-// src/App.ts
+/**
+ * @file App.ts
+ * @brief Central navigation + orchestration layer for Spellventure.
+ *
+ * This class:
+ *   - Boots the global Konva stage & layer
+ *   - Instantiates every screen controller (Menu → Difficulty → Game → Results)
+ *   - Provides the ScreenSwitcher API (switchToScreen / goBack / goHome / help modal)
+ *   - Handles dev-only demo flags (?dev=madlib)
+ *   - Routes resume flows for MadLib/WordLink after mini-games
+ *   - Sends resize events to every controller that supports responsive layout
+ *
+ * Conceptually, **App.ts is the “router” + “scene manager” for the whole game.**
+ * All views/controllers attach their Konva groups to a single shared layer.
+ */
+
 import Konva from "konva";
 import type { Screen, ScreenSwitcher } from "./types";
 
@@ -12,48 +27,76 @@ import MiniResultsScreenController from "./screens/miniResultsScreen/miniResults
 import MadLibPhaseController from "./controllers/MadLibPhaseController";
 
 export default class App implements ScreenSwitcher {
+  /**
+   * @brief Tracks whether the help modal has ever been closed.
+   *
+   * Used so the menu screen’s intro animation doesn’t replay every time
+   * the user returns home. The menu intro only plays **after closing Help
+   * for the very first time.**
+   */
   private helpClosedOnce = false;
+
+  /** Global Konva stage & root layer (all UI nodes render inside this). */
   private stage: Konva.Stage;
   private layer: Konva.Layer;
 
-  // Screens
+  // ======================================================
+  // Main screen controllers (normal game flow)
+  // ======================================================
   private menuController: MenuScreenController;
   private difficultyController: DifficultyScreenController;
   private gameController: GameScreenController;
   private resultsController: ResultsScreenController;
+  private miniResultsController: MiniResultsScreenController;
 
-    private miniResultsController: MiniResultsScreenController;
-
-  // Global UI
+  // ======================================================
+  // Global UI elements (always present except special screens)
+  // ======================================================
   private navBarController: NavBarController;
   private helpModalController: HelpModalController;
 
-  // History stack for navigation
+  /**
+   * @brief Navigation history stack for browser-like "Back" behavior.
+   * Each call to switchToScreen() (unless disabled) pushes to this stack.
+   */
   private history: Screen[] = [];
 
+  /**
+   * @param stage Konva Stage created in main.ts
+   * @param layer Konva Layer for all screen groups to attach into
+   */
   constructor(stage: Konva.Stage, layer: Konva.Layer) {
     this.stage = stage;
     this.layer = layer;
 
-    // runtime dev flag: append ?dev=madlib to the URL to launch only MadLib phase
+    //----------------------------------------------------------------------
+    // DEV-ONLY FEATURE FLAG
+    //----------------------------------------------------------------------
+    // If the URL includes "?dev=madlib", we bypass the full game entirely
+    // and load ONLY the MadLib screen. This is incredibly useful for:
+    // - debugging layout
+    // - grading demonstration
+    // - quickly testing the MadLib logic in isolation
     const params = new URLSearchParams(window.location.search);
     const devMadLib = params.get("dev") === "madlib";
 
-    // === Instantiate screen controllers ===
+    //----------------------------------------------------------------------
+    // Instantiate controllers normally (unless running in dev mode)
+    //----------------------------------------------------------------------
     if (!devMadLib) {
+      // Main 4-stage game flow
       this.menuController = new MenuScreenController(this);
       this.difficultyController = new DifficultyScreenController(this);
       this.gameController = new GameScreenController(this, this.stage, this.layer);
       this.resultsController = new ResultsScreenController(this);
-    }
 
-    // === Global UI === (only instantiate in normal mode)
-    if (!devMadLib) {
+      // Global UI
       this.navBarController = new NavBarController(this);
       this.helpModalController = new HelpModalController(this);
       this.miniResultsController = new MiniResultsScreenController(this);
 
-      // === Attach all screen groups (bottom to top z-order) ===
+      // Add all view groups to the shared Konva layer
+      // (Render order matters: earlier added = lower on screen)
       this.layer.add(this.menuController.getView().getGroup());
       this.layer.add(this.difficultyController.getView().getGroup());
       this.layer.add(this.gameController.getView().getGroup());
@@ -62,17 +105,21 @@ export default class App implements ScreenSwitcher {
       this.layer.add(this.helpModalController.getView().getGroup());
     }
 
+    // Commit layer to stage
     this.stage.add(this.layer);
 
-    console.log("✅ App initialized with stage:", this.stage.width(), this.stage.height());
+    console.log("✅ App initialized:", this.stage.width(), this.stage.height());
 
-    // === Initial State ===
+    //----------------------------------------------------------------------
+    // INITIAL APP STATE: menu screen + help modal
+    //----------------------------------------------------------------------
     if (!devMadLib) {
-      // Normal app: show menu and help
       this.switchToScreen({ type: "menu" }, false);
-      this.openHelp();
+      this.openHelp(); // first-time onboarding
     } else {
-      // Dev mode: directly launch MadLibs only (no other controllers/UI)
+      //------------------------------------------------------------------
+      // DEV MODE: Load MadLib directly with a test story + test word set
+      //------------------------------------------------------------------
       (this as any).storyData = {
         story: `
   Wow! Today my [adjective] teacher marched in with a [noun] and said we'd
@@ -94,70 +141,87 @@ export default class App implements ScreenSwitcher {
         ]
       };
 
-      // Clear any existing children and add only the MadLib view
       this.layer.removeChildren();
-      const madLib = new MadLibPhaseController(this, (this as any).storyData.story, (this as any).storyData.wordSet);
+
+      const madLib = new MadLibPhaseController(
+        this,
+        (this as any).storyData.story,
+        (this as any).storyData.wordSet
+      );
+
       this.layer.add(madLib.getView().getGroup());
       this.layer.batchDraw();
     }
-    
 
-    // === Handle Resizing ===
+    //----------------------------------------------------------------------
+    // Global: resize listener redirects updates to all controllers
+    //----------------------------------------------------------------------
     window.addEventListener("resize", () => this.handleResize());
   }
 
-  /** ===== ScreenSwitcher API ===== */
-
+  // ========================================================================
+  // SCREEN SWITCHING — THE CORE ROUTER OF THE ENTIRE APP
+  // ========================================================================
+  /**
+   * @brief Main navigation handler that shows/hides controllers depending
+   *        on which screen object is passed.
+   *
+   * @param screen         Discriminated union describing the target screen.
+   * @param pushToHistory  Whether this navigation should be added to the
+   *                       back-navigation stack. Defaults to true.
+   */
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
-  // Hide all screens
-  this.menuController?.hide?.();
-  this.difficultyController?.hide?.();
-  this.gameController?.hide?.();
-  this.resultsController?.hide?.();
+    // Hide every normal screen before showing the new one
+    this.menuController?.hide?.();
+    this.difficultyController?.hide?.();
+    this.gameController?.hide?.();
+    this.resultsController?.hide?.();
 
-    // Show target screen
+    //----------------------------------------------
+    // Main routing logic (branch on screen.type)
+    //----------------------------------------------
     switch (screen.type) {
       case "menu":
-        this.menuController?.show?.();
+        this.menuController.show();
         break;
+
       case "difficulty":
         this.difficultyController.show();
         break;
+
       case "game":
-        this.gameController?.show?.();
+        this.gameController.show();
 
-        // If requested, resume directly to the Mad Libs or WordLink phase inside the game
-        // Do this BEFORE applying bonusHearts so the previous hearts state is restored first.
-          // Log incoming screen flags for diagnostics
-          console.log('App.switchToScreen: game screen flags ->', {
-            openMadLib: (screen as any).openMadLib,
-            openWordLink: (screen as any).openWordLink,
-            bonusHearts: (screen as any).bonusHearts,
-          });
+        // Inspect URL-driven resume flags
+        console.log("App.switchToScreen → game flags:", {
+          openMadLib: (screen as any).openMadLib,
+          openWordLink: (screen as any).openWordLink,
+          bonusHearts: (screen as any).bonusHearts,
+        });
 
-          if ((screen as any).openMadLib) {
-            console.log('App.switchToScreen: resuming to MadLib phase');
-            (this.gameController as any)?.resumeToMadLib?.();
-          }
+        // Resume directly to MadLib (used after mini-games)
+        if ((screen as any).openMadLib) {
+          (this.gameController as any).resumeToMadLib();
+        }
 
-          if ((screen as any).openWordLink) {
-            console.log('App.switchToScreen: resuming to WordLink phase');
-            (this.gameController as any)?.resumeToWordLink?.();
-          }
+        // Resume directly to WordLink
+        if ((screen as any).openWordLink) {
+          (this.gameController as any).resumeToWordLink();
+        }
 
-          if ((screen as any).bonusHearts && (screen as any).bonusHearts > 0) {
-            // sent back earned hearts from mini game if any
-            console.log('App.switchToScreen: applying bonusHearts ->', (screen as any).bonusHearts);
-            this.gameController?.addHearts?.((screen as any).bonusHearts);
-          }
+        // Apply hearts earned from mini-game
+        if ((screen as any).bonusHearts > 0) {
+          this.gameController.addHearts((screen as any).bonusHearts);
+        }
         break;
 
       case "result":
-        this.resultsController?.show?.();
+        this.resultsController.show();
         break;
 
       case "mini_result":
-        this.miniResultsController?.show?.({
+        // Special overlay — skip NavBar
+        this.miniResultsController.show({
           score: screen.score,
           hearts: screen.hearts,
           bonusHearts: screen.bonusHearts,
@@ -165,16 +229,13 @@ export default class App implements ScreenSwitcher {
         });
         return;
 
-
-      // select a mini game
       case "miniGameSelect":
+        // Lazy-load mini-game screen
         import("./screens/GameSelectScreen/GameSelectController").then(
           ({ GameSelectController }) => {
             const root = document.getElementById("container") as HTMLDivElement;
-            root.innerHTML = ""; // Clear Konva UI
-
-            const controller = new GameSelectController(root, this);
-            controller.start();
+            root.innerHTML = "";
+            new GameSelectController(root, this).start();
           }
         );
         return;
@@ -182,46 +243,57 @@ export default class App implements ScreenSwitcher {
       case "drop":
         import("./screens/WordsDropGame/WordsDropGameController").then(
           ({ WordsDropGameController }) => {
-            const root = document.getElementById("container") as HTMLDivElement;
+            const root = document.getElementById("container")!;
             root.innerHTML = "";
-            new WordsDropGameController(root,this);   
+            new WordsDropGameController(root, this);
           }
         );
         return;
 
       default:
-        console.warn(`⚠️ Unknown screen type: ${screen.type}`);
+        console.warn("⚠️ Unknown screen type:", screen.type);
     }
 
-    // Always show navbar (global HUD)
-  this.navBarController?.show?.();
+    // NavBar is visible for all normal screens
+    this.navBarController.show();
 
-    // Manage navigation history
+    // Push navigation into history stack
     if (pushToHistory) this.history.push(screen);
 
     this.layer.batchDraw();
   }
 
-  /** Clears game-specific content from the layer without destroying screen groups */
+  // ========================================================================
+  // NAVIGATION ASSISTANTS
+  // ========================================================================
+
+  /** Clears only the game screen contents (used when returning home). */
   private clearGameContent(): void {
-    // Get the game controller's group and remove its children
     const gameView = this.gameController.getView();
-    if (gameView && gameView.getGroup) {
-      const gameGroup = gameView.getGroup();
-      gameGroup.destroyChildren();
+    if (gameView?.getGroup) {
+      gameView.getGroup().destroyChildren();
     }
   }
 
+  /** Navigate back one screen. If no history remains, return home. */
   goBack(): void {
     if (this.history.length <= 1) {
       this.goHome();
       return;
     }
     this.history.pop();
-    const prev = this.history[this.history.length - 1];
-    this.switchToScreen(prev, false);
+    this.switchToScreen(this.history[this.history.length - 1], false);
   }
 
+  /**
+   * @brief Return to main menu and reset onboarding intro logic.
+   *
+   * Behavior:
+   *   - Clears history stack
+   *   - Resets game content
+   *   - Returns to menu
+   *   - Shows Help if first time OR restarts intro animation if not
+   */
   goHome(): void {
     this.history = [];
     this.clearGameContent();
@@ -235,8 +307,9 @@ export default class App implements ScreenSwitcher {
     }
   }
 
-  /** ===== Global Help Modal ===== */
-
+  // ========================================================================
+  // HELP MODAL LOGIC
+  // ========================================================================
   openHelp(): void {
     this.helpModalController.show();
     this.layer.batchDraw();
@@ -246,21 +319,30 @@ export default class App implements ScreenSwitcher {
     this.helpModalController.hide();
     this.layer.batchDraw();
 
+    // First time closing help → trigger menu intro animation
     if (!this.helpClosedOnce) {
       this.helpClosedOnce = true;
       this.menuController.startPlayIntro();
     }
   }
 
-  /** ===== Handle window resizing ===== */
+  // ========================================================================
+  // RESPONSIVE LAYOUT HANDLER
+  // ========================================================================
+  /**
+   * @brief Resizes Konva stage to match its parent container and forwards
+   *        new width/height to any controllers implementing onResize().
+   */
   private handleResize(): void {
     const container = this.stage.container() as HTMLDivElement;
+
     const width = container.clientWidth;
     const height = container.clientHeight;
 
     this.stage.width(width);
     this.stage.height(height);
 
+    // Forward to all controllers that implement onResize()
     (this.menuController as any).onResize?.(width, height);
     (this.difficultyController as any).onResize?.(width, height);
     (this.gameController as any).onResize?.(width, height);
