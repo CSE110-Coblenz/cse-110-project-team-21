@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx,.js",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
+    "test": "vitest --run",
+    "test:ci": "vitest --run --reporter=default"
   },
   "dependencies": {
     "konva": "^9.3.3"
@@ -17,7 +19,9 @@
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "eslint": "^9.39.1",
+    "jsdom": "^27.2.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vitest": "^4.0.13"
   }
 }
