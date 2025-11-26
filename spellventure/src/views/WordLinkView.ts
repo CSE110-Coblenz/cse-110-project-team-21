@@ -21,6 +21,7 @@ export default class WordLinkView {
   private refreshHandler: (() => void) | null = null;
   private hintHandler: (() => void) | null = null;
   private letterClickHandler: ((letter: string) => void) | null = null;
+  private boxClickHandler: ((index: number) => void) | null = null;
 
   // Tracks which boxes are permanent (revealed via hints)
   private lockedHintIndices: Set<number> = new Set();
@@ -149,6 +150,7 @@ export default class WordLinkView {
         strokeWidth: 2,
         fill: i === 0 ? "#16a34a" : "#e5e7eb",
         cornerRadius: 6,
+        listening: i !== 0
       });
 
       const text = new Konva.Text({
@@ -159,7 +161,15 @@ export default class WordLinkView {
         align: "center",
         fontSize: 26,
         fill: i === 0 ? "#fff" : "#111",
+        listening: false,
       });
+
+      if (i !== 0) {
+        const index = i; 
+        box.on("click tap", () => {
+          if (this.boxClickHandler) this.boxClickHandler(index);
+        });
+      }
 
       this.letterBoxes.push(box);
       this.letterTexts.push(text);
@@ -171,7 +181,6 @@ export default class WordLinkView {
 
   /** Draws clickable letter tiles for the current word */
   drawLetterTiles(letters: string[]): void {
-    // Remove previous tiles cleanly
     this.letterTiles.forEach(({ tile }) => tile.destroy());
     this.letterTiles = [];
 
@@ -180,19 +189,27 @@ export default class WordLinkView {
     const spacing = 70;
 
     letters.forEach((char, i) => {
+      // Use the helper method you created!
+      this.createSingleTile(char, startX + i * spacing, startY);
+    });
+
+    this.group.getLayer()?.batchDraw();
+  }
+
+  // Helper to create a tile (refactored for reuse)
+  private createSingleTile(char: string, x: number, y: number) {
       const tile = new Konva.Text({
         text: char.toUpperCase(),
-        x: startX + i * spacing,
-        y: startY,
+        x: x,
+        y: y,
         fontSize: 32,
         fill: "#4f46e5",
         fontStyle: "bold",
         shadowColor: "rgba(0,0,0,0.25)",
         shadowBlur: 3,
-        listening: true, // ensure Konva registers clicks
+        listening: true,
       });
 
-      // always rebind the click handler here
       tile.on("click tap", () => {
         if (this.letterClickHandler) {
           this.letterClickHandler(char.toLowerCase());
@@ -201,12 +218,36 @@ export default class WordLinkView {
 
       this.letterTiles.push({ tile, letter: char });
       this.group.add(tile);
-    });
+  }
 
+  /** Returns a letter to the bank visually */
+  addLetterToBank(letter: string): void {
+    const startY = window.innerHeight - 250;
+    
+
+    const spacing = 70;
+    let nextX = window.innerWidth / 2; 
+    
+    if (this.letterTiles.length > 0) {
+        const lastTile = this.letterTiles[this.letterTiles.length - 1].tile;
+        nextX = lastTile.x() + spacing;
+    } else {
+         nextX = window.innerWidth / 2;
+    }
+
+    this.createSingleTile(letter, nextX, startY);
+    
     this.group.getLayer()?.batchDraw();
   }
-   
 
+  /** Clears a specific box by index */
+  clearLetterAtIndex(index: number): void {
+    if (index > 0 && index < this.letterTexts.length) {
+        this.letterTexts[index].text("");
+        this.group.getLayer()?.batchDraw();
+    }
+  }
+   
   /** Removes a tile from the letter bank once used or hinted */
   removeLetterTile(letter: string): void {
     const index = this.letterTiles.findIndex((t) => t.letter === letter);
@@ -373,6 +414,10 @@ export default class WordLinkView {
       return letters;
   }
 
+  isLockedHint(index: number): boolean {
+    return this.lockedHintIndices.has(index);
+  }
+
   // === Event registration ===
   onSubmitClicked(cb: () => void) {
     this.submitHandler = cb;
@@ -385,6 +430,9 @@ export default class WordLinkView {
   }
   onLetterClicked(cb: (letter: string) => void) {
     this.letterClickHandler = cb;
+  }
+  onBoxClicked(cb: (index: number) => void) {
+    this.boxClickHandler = cb;
   }
 
   /** Returns the Konva group for the game layer */
