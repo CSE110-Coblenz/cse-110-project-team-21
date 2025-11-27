@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 
-/* ---------------------------------------------------------
-   Mock Konva (very small mock so no DOM/canvas needed)
---------------------------------------------------------- */
 vi.mock("konva", () => {
   class MockNode {
     destroy() {}
@@ -13,8 +10,8 @@ vi.mock("konva", () => {
     x() { return 0; }
     y() { return 0; }
     text() { return ""; }
-    width() { return 10; } // prevent NaN layout issues
-    height() { return 20; }   // <-- ⭐ ADD THIS ⭐
+    width() { return 10; }
+    height() { return 20; }  
     fill() {}
     fontStyle() {}
   }
@@ -29,14 +26,8 @@ vi.mock("konva", () => {
   };
 });
 
-/* ---------------------------------------------------------
-   Import the REAL MadLibPhaseView
---------------------------------------------------------- */
 import MadLibPhaseView from "../views/MadLibPhaseView";
 
-/* ---------------------------------------------------------
-   TEST #1 — wrong guess loses heart
---------------------------------------------------------- */
 describe("MadLibPhaseView – wrong guess reduces hearts", () => {
 
   it("should decrease hearts by 1 when wrong type is chosen", () => {
