@@ -21,7 +21,7 @@ export class WordBubbleGameController {
     // Game logic states
     private target: Category = "noun";
     private running = false;
-    private timeLeft = 15;
+    private timeLeft = 30;
     private score = 0;
     private hearts = 0;            // hearts used inside minigame
     private bonusHearts = 0;       // hearts to send back to main game
@@ -72,7 +72,7 @@ export class WordBubbleGameController {
     // ---------------------------
     private startGame() {
         this.running = true;
-        this.timeLeft = 15;
+        this.timeLeft = 30;
         this.score = 0;
         this.hearts = 0;
         this.bonusHearts = 0; // reset bonus hearts at start
