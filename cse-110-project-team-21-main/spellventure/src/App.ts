@@ -56,9 +56,10 @@ export default class App implements ScreenSwitcher {
       this.layer.add(this.menuController.getView().getGroup());
       this.layer.add(this.difficultyController.getView().getGroup());
       this.layer.add(this.gameController.getView().getGroup());
-      this.layer.add(this.resultsController.getView().getGroup());
-      this.layer.add(this.navBarController.getView().getGroup());
-      this.layer.add(this.helpModalController.getView().getGroup());
+      this.layer.add(this.navBarController.getView().getGroup());    // navbar first
+      this.layer.add(this.helpModalController.getView().getGroup()); // help above navbar
+      this.layer.add(this.resultsController.getView().getGroup());   // results on top
+            
     }
 
     this.stage.add(this.layer);
@@ -152,7 +153,8 @@ export default class App implements ScreenSwitcher {
         break;
 
       case "result":
-        this.resultsController?.show?.();
+        this.resultsController.show();
+        this.navBarController.hide();
         break;
 
       case "mini_result":

@@ -12,7 +12,7 @@ export default class MadLibPhaseController {
   private view: MadLibPhaseView;
   private app: ScreenSwitcher;
   
-  /** Expose methods for external controllers to adjust hearts */
+  /** allow external set/add hearts (rarely used) */
   addHearts(n: number) {
     (this.view as any).addHearts?.(n);
   }
@@ -22,36 +22,40 @@ export default class MadLibPhaseController {
   }
 
   /**
-   * @param app        The App controller
-   * @param story      The story template string with [type] placeholders
-   * @param wordSet    The list of { word, type } pairs chosen in GameScreenController
+   * @param app        the App controller
+   * @param story      template string with [type] placeholders
+   * @param wordSet    list of { word, type } from WordLink phase
    */
   constructor(app: ScreenSwitcher, story: string, wordSet: { word: string; type: string }[]) {
     this.app = app;
 
-    // ✅ Build the view with the fixed story + words
+    // build MadLib UI
     this.view = new MadLibPhaseView(story, wordSet);
-    // Register blank filled handler once
+
+    // when blanks are filled one-by-one
     this.view.onBlankFilled(() => {
       if (this.view.allBlanksFilled()) {
-        console.log("✅ Story complete! Transitioning to results screen...");
-        this.app.switchToScreen({ type: "result" });
+        console.log("🎉 All blanks filled (via typing). Showing Congrats animation...");
+        this.view.showCongratsAnimation(() => {
+          this.app.switchToScreen({ type: "difficulty" });
+        });
       }
     });
 
-    // When the player clicks a word in the word bank
+    // when user clicks a word in the bank
     this.view.onWordClicked((word, type) => {
       const filled = this.view.fillNextBlank(word, type);
-      
-      // If all blanks filled, go to results
+
       if (filled && this.view.allBlanksFilled()) {
-        console.log("✅ Story complete! Transitioning to results screen...");
-        this.app.switchToScreen({ type: "result" });
+        console.log("🎉 All blanks filled (via clicking). Showing Congrats animation...");
+        this.view.showCongratsAnimation(() => {
+          this.app.switchToScreen({ type: "difficulty" });
+        });
       }
     });
   }
 
-  /** Returns the visual Konva group for this screen */
+  /** Return the Konva group */
   getView() {
     return { getGroup: () => this.view.getGroup() };
   }

@@ -608,4 +608,72 @@ private showChoicePopup(blankNode: Konva.Text, expectedType: string): void {
     this.heartText.text(`❤️ Hearts: ${this.hearts}`);
     this.group.getLayer()?.batchDraw();
   }
+
+  showCongratsAnimation(onFinish?: () => void) {
+    const group = this.getGroup();
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // dark overlay
+    const overlay = new Konva.Rect({
+      x: 0, y: 0,
+      width: w,
+      height: h,
+      fill: "rgba(0,0,0,0.55)",
+      opacity: 0,
+    });
+    group.add(overlay);
+
+    // big text
+    const text = new Konva.Text({
+      x: w / 2,
+      y: h / 2 - 80,
+      text: "🎉 Congratulations! 🎉",
+      fontSize: 48,
+      fontStyle: "bold",
+      fill: "#fff",
+      offsetX: 240,
+      opacity: 0
+    });
+    group.add(text);
+
+    // button
+    const btn = new Konva.Rect({
+      x: w / 2 - 130,
+      y: h / 2 + 20,
+      width: 260,
+      height: 60,
+      fill: "#ffffff",
+      cornerRadius: 12,
+      opacity: 0,
+    });
+
+    const btnText = new Konva.Text({
+      x: w / 2,
+      y: h / 2 + 50,
+      text: "Back to Level Select",
+      fontSize: 22,
+      fill: "#333",
+      offsetX: 110,
+      offsetY: 15,
+      opacity: 0,
+    });
+
+    group.add(btn, btnText);
+
+    // fade in sequence
+    overlay.to({ opacity: 1, duration: 0.4 });
+    text.to({ opacity: 1, duration: 0.6 });
+    btn.to({ opacity: 1, duration: 0.8 });
+    btnText.to({ opacity: 1, duration: 1.0 });
+
+    // click to continue
+    const go = () => {
+      onFinish?.();
+    };
+
+    btn.on("click", go);
+    btnText.on("click", go);
+  }
+
 }
