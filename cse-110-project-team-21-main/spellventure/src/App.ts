@@ -12,21 +12,20 @@ import MiniResultsScreenController from "./screens/miniResultsScreen/miniResults
 import MadLibPhaseController from "./controllers/MadLibPhaseController";
 
 export default class App implements ScreenSwitcher {
-  private helpClosedOnce = false;
   private stage: Konva.Stage;
   private layer: Konva.Layer;
 
   // Screens
-  private menuController: MenuScreenController;
-  private difficultyController: DifficultyScreenController;
-  private gameController: GameScreenController;
-  private resultsController: ResultsScreenController;
+  private menuController!: MenuScreenController;
+  private difficultyController!: DifficultyScreenController;
+  private gameController!: GameScreenController;
+  private resultsController!: ResultsScreenController;
 
-    private miniResultsController: MiniResultsScreenController;
+  private miniResultsController!: MiniResultsScreenController;
 
   // Global UI
-  private navBarController: NavBarController;
-  private helpModalController: HelpModalController;
+  private navBarController!: NavBarController;
+  private helpModalController!: HelpModalController;
 
   // History stack for navigation
   private history: Screen[] = [];
@@ -70,7 +69,7 @@ export default class App implements ScreenSwitcher {
     if (!devMadLib) {
       // Normal app: show menu and help
       this.switchToScreen({ type: "menu" }, false);
-      this.openHelp();
+      this.menuController.startPlayIntro(); 
     } else {
       // Dev mode: directly launch MadLibs only (no other controllers/UI)
       (this as any).storyData = {
@@ -190,7 +189,8 @@ export default class App implements ScreenSwitcher {
         return;
 
       default:
-        console.warn(`⚠️ Unknown screen type: ${screen.type}`);
+        //console.warn(`⚠️ Unknown screen type: ${screen.type}`);
+        console.warn(`⚠️ Unknown screen type: ${screen}`);
     }
 
     // Always show navbar (global HUD)
@@ -227,12 +227,9 @@ export default class App implements ScreenSwitcher {
     this.clearGameContent();
     this.switchToScreen({ type: "menu" }, true);
 
-    if (!this.helpClosedOnce) {
-      this.openHelp();
-    } else {
-      this.menuController.reset();
-      this.menuController.startPlayIntro();
-    }
+    this.menuController.reset();
+    this.menuController.startPlayIntro();
+  
   }
 
   /** ===== Global Help Modal ===== */
@@ -245,11 +242,6 @@ export default class App implements ScreenSwitcher {
   closeHelp(): void {
     this.helpModalController.hide();
     this.layer.batchDraw();
-
-    if (!this.helpClosedOnce) {
-      this.helpClosedOnce = true;
-      this.menuController.startPlayIntro();
-    }
   }
 
   /** ===== Handle window resizing ===== */
