@@ -5,7 +5,6 @@ import type { Screen, ScreenSwitcher } from "./types";
 import MenuScreenController from "./controllers/MenuScreenController";
 import GameScreenController from "./controllers/GameScreenController";
 import ResultsScreenController from "./controllers/ResultsScreenController";
-import DifficultyScreenController from "./controllers/DifficultyScreenController";
 import NavBarController from "./controllers/NavBarController";
 import HelpModalController from "./controllers/HelpModalController";
 import MiniResultsScreenController from "./screens/miniResultsScreen/miniResultsScreenController";
@@ -18,7 +17,6 @@ export default class App implements ScreenSwitcher {
 
   // Screens
   private menuController: MenuScreenController;
-  private difficultyController: DifficultyScreenController;
   private gameController: GameScreenController;
   private resultsController: ResultsScreenController;
 
@@ -42,7 +40,6 @@ export default class App implements ScreenSwitcher {
     // === Instantiate screen controllers ===
     if (!devMadLib) {
       this.menuController = new MenuScreenController(this);
-      this.difficultyController = new DifficultyScreenController(this);
       this.gameController = new GameScreenController(this, this.stage, this.layer);
       this.resultsController = new ResultsScreenController(this);
     }
@@ -55,7 +52,6 @@ export default class App implements ScreenSwitcher {
 
       // === Attach all screen groups (bottom to top z-order) ===
       this.layer.add(this.menuController.getView().getGroup());
-      this.layer.add(this.difficultyController.getView().getGroup());
       this.layer.add(this.gameController.getView().getGroup());
       this.layer.add(this.resultsController.getView().getGroup());
       this.layer.add(this.navBarController.getView().getGroup());
@@ -111,7 +107,6 @@ export default class App implements ScreenSwitcher {
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
   // Hide all screens
   this.menuController?.hide?.();
-  this.difficultyController?.hide?.();
   this.gameController?.hide?.();
   this.resultsController?.hide?.();
 
@@ -120,9 +115,7 @@ export default class App implements ScreenSwitcher {
       case "menu":
         this.menuController?.show?.();
         break;
-      case "difficulty":
-        this.difficultyController.show();
-        break;
+      // Note: difficulty screen removed from runtime pipeline.
       case "game":
         this.gameController?.show?.();
 
@@ -261,9 +254,8 @@ export default class App implements ScreenSwitcher {
     this.stage.width(width);
     this.stage.height(height);
 
-    (this.menuController as any).onResize?.(width, height);
-    (this.difficultyController as any).onResize?.(width, height);
-    (this.gameController as any).onResize?.(width, height);
+  (this.menuController as any).onResize?.(width, height);
+  (this.gameController as any).onResize?.(width, height);
     (this.resultsController as any).onResize?.(width, height);
     (this.navBarController as any).onResize?.(width, height);
     (this.helpModalController as any).onResize?.(width, height);

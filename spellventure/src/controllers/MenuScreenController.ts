@@ -16,7 +16,8 @@ export default class MenuScreenController {
 
   startPlayIntro(): void {
     this.view.startPlayIntro(() => {
-      this.app.switchToScreen({ type: "difficulty" });
+      // Skip the difficulty selection screen and go straight to the game
+      this.app.switchToScreen({ type: "game" });
     });
   }
 
