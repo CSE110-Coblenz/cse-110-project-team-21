@@ -11,8 +11,6 @@ export default class NavBarView {
   private bg: Konva.Rect;
   private soundIcon: Konva.Text;
 
-  
-
   constructor() {
     this.group = new Konva.Group();
     this.build();

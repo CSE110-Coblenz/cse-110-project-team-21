@@ -224,7 +224,6 @@ export default class WordLinkView {
   addLetterToBank(letter: string): void {
     const startY = window.innerHeight - 250;
     
-
     const spacing = 70;
     let nextX = window.innerWidth / 2; 
     
