@@ -39,16 +39,7 @@ export default class MadLibPhaseController {
       }
     });
 
-    // When the player clicks a word in the word bank
-    this.view.onWordClicked((word, type) => {
-      const filled = this.view.fillNextBlank(word, type);
-      
-      // If all blanks filled, go to results
-      if (filled && this.view.allBlanksFilled()) {
-        console.log("✅ Story complete! Transitioning to results screen...");
-        this.app.switchToScreen({ type: "result" });
-      }
-    });
+    // Word-bank callbacks removed — the view uses popup choice UI instead.
   }
 
   /** Returns the visual Konva group for this screen */

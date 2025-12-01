@@ -154,8 +154,8 @@ export default class MadLibPhaseView {
     // Render the paragraph with blanks from the story template
     this.drawStory();
 
-    // Optionally render the word bank below (currently disabled)
-    // this.drawWordBank();
+  // Optionally render the word bank below (currently disabled).
+  // this.drawWordBank();
 
     // Show HUD elements (hearts + feedback text)
     this.drawHUD();
@@ -192,142 +192,127 @@ export default class MadLibPhaseView {
     const marginX = window.innerWidth * 0.1;
     const maxWidth = window.innerWidth * 0.8;
 
-  // Split the template by spaces to process token by token
-  // Note: we keep tokens as-is so we can detect punctuation that may be
-  // attached to placeholders (e.g. "[noun].") and render that punctuation
-  // separately. Using a plain split keeps trailing punctuation on the token
-  // so we can extract and preserve it below.
-  const words = this.storyTemplate.split(" ");
+    // We'll walk the string and emit alternating text segments and blanks.
+    // This is more robust than a simple split-on-space because it handles
+    // punctuation, newlines, and multiple placeholders per token.
     let x = marginX;
     let y = paragraphY;
 
-    for (const token of words) {
-      // If the token contains `[ ]`, we treat it as a blank placeholder.
-      // Important: tokens may include trailing punctuation (e.g. "[noun].")
-      // because we split on spaces. We detect a leading placeholder and
-      // extract any trailing suffix so the punctuation can be rendered
-      // as its own text node (preserving periods, commas, etc.).
+    const placeholderRe = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
 
-      // Match a token that starts with a bracketed placeholder and capture
-      // the placeholder type plus any trailing characters after the closing
-      // bracket (the suffix). Example matches:
-      //  - "[noun]"        => type: noun, suffix: ""
-      //  - "[noun]."       => type: noun, suffix: "."
-      //  - "[verb],"       => type: verb, suffix: ","
-      const match = token.match(/^\[([^\]]+)\](.*)$/);
-      let display = token;
-      let type = "";
-
-      if (match) {
-        type = match[1];
-        const suffix = match[2] || ""; // punctuation (e.g. '.' or ',') or empty
-
-        // Create a visible, clickable blank in place of that token
-        const blankText = new Konva.Text({
-          text: "__________ ",
-          x,
-          y,
-          fontSize: 22,
-          fontFamily: "system-ui",
-          fill: "#2563eb",
-          fontStyle: "normal",
-          name: "story-node",
-        });
-
-        // If this blank would go past the right margin, wrap to next line
-        if (x + blankText.width() > marginX + maxWidth) {
-          x = marginX;
-          y += lineHeight;
-          blankText.x(x);
-          blankText.y(y);
-        }
-
-        // A small label under the blank that reminds the player of the type
-        const typeLabel = new Konva.Text({
-          text: type,
-          x: blankText.x(),
-          y: blankText.y() + blankText.height(),
-          fontSize: 14,
-          fontFamily: "system-ui",
-          fill: "#2563eb",
-          fontStyle: "italic",
-          name: "story-node",
-        });
-
-        // Make the blank interactive so clicking it opens a popup
-        blankText.on("click tap", () => {
-          // If this blank is already filled, do nothing
-          const existing = this.blanks.find((b) => b.node === blankText);
-          if (existing?.filled) return;
-
-          // If another popup is already open, ignore this click
-          if (this.isPopupOpen) return;
-
-          // Otherwise, open a choice popup for this blank and type
-          this.showChoicePopup(blankText, type);
-        });
-
-        // Track this blank so we can later fill it and check completion
-        this.blanks.push({ node: blankText, type, filled: false, typeNode: typeLabel });
-
-        // Add both the blank and type label to the group
-        this.group.add(blankText);
-        this.group.add(typeLabel);
-
-        x += blankText.width();
-
-        // If there was trailing punctuation (e.g., '.'), render it as its own
-        // text node so it doesn't get swallowed by the placeholder logic.
-        if (suffix) {
-          const suffixText = new Konva.Text({
-            text: suffix + " ",
+    // Helper to render an arbitrary text segment (may contain many words)
+    const renderTextSegment = (segment: string) => {
+      if (!segment) return;
+      const parts = segment.split(/(\s+)/); // keep whitespace tokens
+      for (const part of parts) {
+        if (part === "") continue;
+        // If it's pure whitespace, advance x by measuring a single space
+        if (/^\s+$/.test(part)) {
+          const space = new Konva.Text({
+            text: part,
             x,
             y,
             fontSize: 22,
             fontFamily: "system-ui",
             fill: "#111",
-            fontStyle: "normal",
             name: "story-node",
           });
 
-          // Wrap suffix to next line if necessary
-          if (x + suffixText.width() > marginX + maxWidth) {
+          // wrapping: if the whitespace itself is beyond margin, move to next line
+          if (x + space.width() > marginX + maxWidth) {
             x = marginX;
             y += lineHeight;
-            suffixText.x(x);
-            suffixText.y(y);
+            space.x(x);
+            space.y(y);
           }
 
-          this.group.add(suffixText);
-          x += suffixText.width();
+          this.group.add(space);
+          x += space.width();
+          continue;
         }
 
-        continue;
-      }
+        // Normal visible word
+        const text = new Konva.Text({
+          text: part,
+          x,
+          y,
+          fontSize: 22,
+          fontFamily: "system-ui",
+          fill: "#111",
+          name: "story-node",
+        });
 
-      // Normal word (no [type] placeholder): render as basic text
-      const text = new Konva.Text({
-        text: display + " ",
+        if (x + text.width() > marginX + maxWidth) {
+          x = marginX;
+          y += lineHeight;
+          text.x(x);
+          text.y(y);
+        }
+
+        this.group.add(text);
+        x += text.width();
+      }
+    };
+
+    while ((m = placeholderRe.exec(this.storyTemplate)) !== null) {
+      const matchIndex = m.index;
+      const type = m[1];
+
+      // Render any text before the placeholder
+      const before = this.storyTemplate.slice(lastIndex, matchIndex);
+      renderTextSegment(before);
+
+      // Render blank
+      const blankText = new Konva.Text({
+        text: "__________ ",
         x,
         y,
         fontSize: 22,
         fontFamily: "system-ui",
-        fill: "#111",
+        fill: "#2563eb",
         fontStyle: "normal",
         name: "story-node",
       });
 
-      // Line wrap if this word would go past the allowed margin
-      if (x + text.width() > marginX + maxWidth) {
+      if (x + blankText.width() > marginX + maxWidth) {
         x = marginX;
         y += lineHeight;
-        text.x(x);
-        text.y(y);
+        blankText.x(x);
+        blankText.y(y);
       }
 
-      this.group.add(text);
-      x += text.width();
+      const typeLabel = new Konva.Text({
+        text: type,
+        x: blankText.x(),
+        y: blankText.y() + blankText.height(),
+        fontSize: 14,
+        fontFamily: "system-ui",
+        fill: "#2563eb",
+        fontStyle: "italic",
+        name: "story-node",
+      });
+
+      blankText.on("click tap", () => {
+        const existing = this.blanks.find((b) => b.node === blankText);
+        if (existing?.filled) return;
+        if (this.isPopupOpen) return;
+        this.showChoicePopup(blankText, type);
+      });
+
+      this.blanks.push({ node: blankText, type, filled: false, typeNode: typeLabel });
+      this.group.add(blankText);
+      this.group.add(typeLabel);
+
+      x += blankText.width();
+
+      lastIndex = placeholderRe.lastIndex;
     }
+
+    // Render any trailing text after the last placeholder
+    const tail = this.storyTemplate.slice(lastIndex);
+    renderTextSegment(tail);
 
     this.group.getLayer()?.batchDraw();
   }
@@ -834,8 +819,8 @@ export default class MadLibPhaseView {
    * @param popupLayer   The top layer containing this popup UI.
    */
   private startPopupTimer(
-    blankNode: Konva.Text,
-    expectedType: string,
+    _blankNode: Konva.Text,
+    _expectedType: string,
     popupLayer: Konva.Layer
   ): void {
     // Clear any previous timer to avoid overlapping countdowns
