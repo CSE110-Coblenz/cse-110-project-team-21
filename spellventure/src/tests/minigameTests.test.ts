@@ -1,9 +1,13 @@
+/**
+ * @file miniGameTests.test.ts
+ * @brief Tests the minigame behavior
+ */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameSelectController } from "../../src/screens/GameSelectScreen/GameSelectController";
 
-// ------------------------------------------------------------
-// MOCK IntroScreenController + WordBubbleGameController
-// ------------------------------------------------------------
+/**
+ * Mocks each game's controller for testing
+ */
 vi.mock("../../src/screens/WordsDropGame/IntroScreenController", () => {
   return {
     IntroScreenController: vi.fn()
@@ -15,10 +19,6 @@ vi.mock("../../src/screens/WordBubbleGame/WordBubbleGameController", () => {
     WordBubbleGameController: vi.fn()
   };
 });
-
-// ------------------------------------------------------------
-// MOCK GameSelectModel (MUST BE A CLASS)
-// ------------------------------------------------------------
 vi.mock("../../src/screens/GameSelectScreen/GameSelectModel", () => {
   return {
     GameSelectModel: class {
@@ -30,9 +30,6 @@ vi.mock("../../src/screens/GameSelectScreen/GameSelectModel", () => {
   };
 });
 
-// ------------------------------------------------------------
-// MOCK GameSelectView (MUST BE A CLASS)
-// ------------------------------------------------------------
 vi.mock("../../src/screens/GameSelectScreen/GameSelectView", () => {
   return {
     GameSelectView: class {
@@ -55,10 +52,9 @@ const { IntroScreenController } = await import(
 const { WordBubbleGameController } = await import(
   "../../src/screens/WordBubbleGame/WordBubbleGameController"
 );
-
-// ------------------------------------------------------------
-// TESTS
-// ------------------------------------------------------------
+/**
+ *                Tests
+ */
 
 describe("GameSelectController", () => {
   let root: HTMLDivElement;

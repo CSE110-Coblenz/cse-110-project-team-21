@@ -1,6 +1,13 @@
+/**
+ * @file WordLinkController.test.ts
+ * @brief Unit tests for core wordlink gameplay logic
+ */
+
 import { vi, describe, it, expect } from "vitest";
 
-// --- Mock Konva (simple no-op class) ---
+/**
+ * Konva mock for testing
+ */
 vi.mock("konva", () => {
   class MockNode {
     destroy() {}
@@ -26,8 +33,9 @@ vi.mock("konva", () => {
     }
   };
 });
-
-// --- Mock WordLinkView AS A CLASS (constructor) ---
+/**
+ * Wordlink view mock
+ */
 vi.mock("../views/WordLinkView", () => ({
   default: class MockWordLinkView {
     drawWordBoxes() {}
@@ -65,24 +73,21 @@ vi.mock("../views/WordLinkView", () => ({
   }
 }));
 
-// --- Mock WordValidator (OVERRIDDEN inside specific tests when needed) ---
+/**
+ * Valid English Word validator mock
+ */
 vi.mock("../utils/WordValidator", () => ({
   isValidEnglishWord: async () => false
 }));
 
-// ==========================
-//   NOW IMPORT CONTROLLER
-// ==========================
 import WordLinkController from "../controllers/WordLinkController";
 
-// Fake app for constructor
 const fakeApp: any = {
   storyData: { story: "", wordSet: [] }
 };
-
-// ==========================
-//        TESTS
-// ==========================
+/**
+ *           Tests
+ */
 describe("WordLinkController – Core Logic", () => {
 
   it("initializes with 3 hearts", () => {

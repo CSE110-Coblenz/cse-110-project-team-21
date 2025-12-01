@@ -1,8 +1,10 @@
+/**
+ * @file setup.ts
+ * @brief mocking setup used in other testing files
+ */
+
 import { vi } from "vitest";
 
-/* ---------------------------------------------------------
-   MOCK KONVA (so no real canvas is needed)
---------------------------------------------------------- */
 vi.mock("konva", () => {
   class MockNode {
     destroy() {}
@@ -13,7 +15,7 @@ vi.mock("konva", () => {
     x() { return 0; }
     y() { return 0; }
     text() { return ""; }
-    width() { return 0; }   // IMPORTANT: prevents width() crash
+    width() { return 0; } 
     fill() {}
   }
 
@@ -27,7 +29,7 @@ vi.mock("konva", () => {
 });
 
 /* ---------------------------------------------------------
-   MOCK WordLinkView as a CLASS (constructor required)
+   MOCK WordLinkView as a class
 --------------------------------------------------------- */
 vi.mock("../views/WordLinkView", () => {
   return {
