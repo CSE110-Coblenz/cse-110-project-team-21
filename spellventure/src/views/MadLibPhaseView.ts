@@ -97,6 +97,13 @@ export default class MadLibPhaseView {
   private popupTimerId: number | null = null;
 
   /**
+   * Stores the interval ID used to update the on-screen countdown. We keep
+   * this as an instance property so other code paths (e.g., button handlers)
+   * can cancel it when the popup is closed early.
+   */
+  private popupCountdownInterval: number | null = null;
+
+  /**
    * @brief Allows external code (controller) to register a callback that fires
    *        whenever any blank in the story is filled.
    *
@@ -592,7 +599,7 @@ export default class MadLibPhaseView {
 
     popupLayer.add(overlay, popup, title);
 
-    // Create interactive buttons for each option in the popup
+  // Create interactive buttons for each option in the popup
     options.forEach((opt, i) => {
       const btnGroup = new Konva.Group({
         x: popup.x() + 40,
@@ -637,6 +644,16 @@ export default class MadLibPhaseView {
 
       // When a button is clicked, decide correctness and fill the blank accordingly
       btnGroup.on("click tap", () => {
+        // Clear any running countdowns so the timeout won't also fire later
+        if (this.popupCountdownInterval) {
+          clearInterval(this.popupCountdownInterval);
+          this.popupCountdownInterval = null;
+        }
+        if (this.popupTimerId) {
+          clearTimeout(this.popupTimerId);
+          this.popupTimerId = null;
+        }
+
         const correctChoice = opt.type === expectedType;
 
         if (correctChoice) {
@@ -843,8 +860,9 @@ export default class MadLibPhaseView {
 
     let secondsLeft = 10;
 
-    // Interval updates timerText every second
-    const countdownInterval = setInterval(() => {
+    // Interval updates timerText every second. Stored on the instance so
+    // it can be cleared from other code paths (e.g., when a choice is made).
+    this.popupCountdownInterval = window.setInterval(() => {
       secondsLeft--;
       timerText.text(`⏳ ${secondsLeft}`);
       popupLayer.batchDraw();
@@ -852,7 +870,10 @@ export default class MadLibPhaseView {
 
     // Timeout fires once after 10 seconds to handle time expiration
     this.popupTimerId = window.setTimeout(() => {
-      clearInterval(countdownInterval);
+      if (this.popupCountdownInterval) {
+        clearInterval(this.popupCountdownInterval);
+        this.popupCountdownInterval = null;
+      }
       this.popupTimerId = null;
 
       // Inform the player via feedback + heart penalty
