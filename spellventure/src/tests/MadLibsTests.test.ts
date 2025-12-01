@@ -29,7 +29,7 @@ vi.mock("konva", () => {
     _y = 0;
     _fontStyle = "normal";
     children: any[] = [];
-    _handlers: Record<string, Function> = {};
+    _handlers: Record<string, () => void> = {};
 
     constructor(config: any = {}) {
       if (config.text !== undefined) this._text = config.text;
@@ -38,8 +38,8 @@ vi.mock("konva", () => {
       if (config.y !== undefined) this._y = config.y;
     }
 
-    on(event: string, fn: Function) {
-      this._handlers[event] = fn;
+    on(event: string, fn: () => void) {
+     this._handlers[event] = fn;
     }
     trigger(event: string) {
       if (this._handlers[event]) this._handlers[event]();
