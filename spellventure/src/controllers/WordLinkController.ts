@@ -25,7 +25,7 @@ export default class WordLinkController {
   private score = 0;
   private hearts = 3;
   private usedHints = 0;
-  // private hintLetters = new Set<string>();
+  private letterPositions: (string | null)[] = [];
 
   constructor(app: ScreenSwitcher, wordSet: { word: string; type: string }[]) {
     this.app = app;
@@ -52,6 +52,7 @@ export default class WordLinkController {
     let submitting = false;
 
     this.view.onLetterClicked((letter) => this.handleLetter(letter));
+    this.view.onBoxClicked((index) => this.handleBoxClick(index));
 
     this.view.onSubmitClicked(async () => {
       if (submitting) return;
@@ -84,11 +85,12 @@ export default class WordLinkController {
 
   /** Loads and draws the current target word. */
   private loadCurrentWord(): void {
-    const word = this.placedWords[this.currentWordIndex].word;
+const word = this.placedWords[this.currentWordIndex].word;
     const firstLetter = word[0];
-    this.currentGuess = "";
     this.usedHints = 0;
-    // this.hintLetters.clear();
+    
+    this.letterPositions = new Array(word.length).fill(null);
+    this.letterPositions[0] = firstLetter; 
 
     this.view.drawWordBoxes(firstLetter, word.length);
     const letters = this.shuffleLetters(word.slice(1).split(""));
@@ -97,45 +99,72 @@ export default class WordLinkController {
 
   /** Player selects a letter from the bank. */
   private handleLetter(letter: string): void {
-    const currentWord = this.placedWords[this.currentWordIndex].word;
-    if (this.currentGuess.length >= currentWord.length - 1) return;
+    let emptyIndex = -1;
+    for(let i = 1; i < this.letterPositions.length; i++) {
+        if (this.letterPositions[i] === null) {
+            emptyIndex = i;
+            break;
+        }
+    }
 
-    // Prevent reuse of same tile
-    // if (this.hintLetters.has(letter)) return;
+    if (emptyIndex === -1) return;
 
-    this.currentGuess += letter;
-    this.view.fillNextLetter(letter);
-    this.view.removeLetterTile(letter); // remove from letter bank
+    this.letterPositions[emptyIndex] = letter;
+    
+    this.view.fillNextLetter(letter); 
+    this.view.removeLetterTile(letter);
+  }
+
+  /** Player clicks a box to remove the letter */
+  private handleBoxClick(index: number): void {
+    const letter = this.letterPositions[index];
+
+    if (!letter || index === 0) return;
+
+    if (this.view.isLockedHint(index)) {
+        this.view.flashFeedback("Can't remove hint!");
+        return;
+    }
+
+    this.letterPositions[index] = null; 
+    this.view.clearLetterAtIndex(index); 
+    this.view.addLetterToBank(letter); 
   }
 
   /** Refreshes the current word (clears guesses but keeps hints). */
   private refreshWord(): void {
     const currentWord = this.placedWords[this.currentWordIndex].word;
-    this.currentGuess = "";
+
     this.view.clearCurrentWord(); 
 
-    // Force Konva to flush the clear before redrawing tiles
+    const visibleState = this.view.getVisibleWord(); 
+
+    for (let i = 1; i < currentWord.length; i++) {
+      if (visibleState[i] && visibleState[i] !== " ") {
+        this.letterPositions[i] = visibleState[i];
+      } else {
+        this.letterPositions[i] = null;
+      }
+    }
+
+    const neededChars = currentWord.slice(1).split(""); 
+    const currentOnBoard = this.letterPositions.slice(1).filter((c) => c !== null) as string[];
+    
+    currentOnBoard.forEach((char) => {
+      const index = neededChars.indexOf(char.toLowerCase()); 
+      if (index === -1) {
+         const upperIdx = neededChars.indexOf(char.toUpperCase());
+         if (upperIdx > -1) neededChars.splice(upperIdx, 1);
+      } else {
+        neededChars.splice(index, 1);
+      }
+    });
+
+    const shuffled = this.shuffleLetters(neededChars);
+
     const layer = this.view.getGroup().getLayer();
     layer?.batchDraw();
 
-    const allNeeded = currentWord.slice(1).split("");
-    const hintedLetters = this.view.getHintedLetters();
-    const tempHinted = [...hintedLetters];
-
-    const remaining = allNeeded.filter((ch) => {
-      const hintIndex = tempHinted.indexOf(ch);
-      if (hintIndex > -1) {
-        tempHinted.splice(hintIndex, 1);
-        return false;
-      }
-
-      return true;
-    });
-
-    const shuffled = this.shuffleLetters(remaining);
-
-
-    // Add a short delay so new tiles attach AFTER redraw
     setTimeout(() => {
       this.view.drawLetterTiles(shuffled);
       layer?.batchDraw();
@@ -145,18 +174,26 @@ export default class WordLinkController {
   /** Uses one hint (reveals one missing letter). */
   private useHint(): void {
     const word = this.placedWords[this.currentWordIndex].word;
+    const len = word.length;
 
-    // Limit to 3 hints per word
-    if (this.usedHints >= 3) {
+    let maxHints = 3; 
+    if (len <= 4) {
+      maxHints = 1; 
+    } else if (len <= 6) {
+      maxHints = 2; 
+    }
+
+    if (this.usedHints >= maxHints) {
       this.view.flashFeedback("No more hints!");
       return;
     }
 
-    // Collect indices of letters not yet shown (excluding first)
     const unrevealed: number[] = [];
     for (let i = 1; i < word.length; i++) {
-      const visible = this.view.getVisibleWord()[i];
-      if (!visible || visible === "") unrevealed.push(i);
+      const currentVal = this.letterPositions[i];
+      if (currentVal?.toLowerCase() !== word[i].toLowerCase()) {
+        unrevealed.push(i);
+      }
     }
 
     if (unrevealed.length === 0) {
@@ -164,17 +201,15 @@ export default class WordLinkController {
       return;
     }
 
-    // Pick a random unrevealed position
     const randomIndex = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-    const letter = word[randomIndex];
+    const correctLetter = word[randomIndex];
 
-    // Track hint usage
-    // this.hintLetters.add(letter);
+    this.view.removeLetterTile(correctLetter);
+
+    this.letterPositions[randomIndex] = correctLetter;
     this.usedHints++;
 
-    // Reveal visually + remove from bank
-    this.view.revealLetter(randomIndex, letter);
-    this.view.removeLetterTile(letter);
+    this.view.revealLetter(randomIndex, correctLetter);
     this.view.updateHUD(this.score, this.hearts);
   }
 
