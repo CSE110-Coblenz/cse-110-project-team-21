@@ -224,4 +224,32 @@ it("progress persists between words", async () => {
   expect(removes).toBe(3);
 });
 
+it.skip("rejects valid English words if the length does not match the target word", async () => {
+  const ctrl = new WordLinkController(fakeApp, [
+    { word: "trip", type: "noun" }
+  ]);
+
+  const view = (ctrl as any).view;
+
+  // Shorter valid English word
+  view.getVisibleWord = vi.fn().mockReturnValue("tip");
+
+  // Validator says it's a real English word (true)
+  vi.spyOn(await import("../utils/WordValidator"), "isValidEnglishWord")
+    .mockResolvedValue(true);
+
+  (ctrl as any).score = 0;
+  (ctrl as any).hearts = 3;
+
+  await (ctrl as any).submitGuess();
+
+  // Should NOT be rewarded
+  expect((ctrl as any).score).toBe(0);
+
+  // Should lose a heart
+  expect((ctrl as any).hearts).toBe(2);
+});
+
+
+
 });
