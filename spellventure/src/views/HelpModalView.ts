@@ -1,4 +1,3 @@
-// src/views/HelpModalView.ts
 import Konva from "konva";
 
 export default class HelpModalView {
@@ -6,14 +5,14 @@ export default class HelpModalView {
   private background: Konva.Rect;
   private box: Konva.Rect;
   private title: Konva.Text;
+  private separator: Konva.Line;
   private text: Konva.Text;
-  private closeButton: Konva.Text;
+  private closeButton: Konva.Group;
 
   constructor() {
     this.group = new Konva.Group({ visible: false });
     this.buildModal();
 
-    // Rebuild and reposition modal on window resize
     window.addEventListener("resize", () => this.rebuild());
   }
 
@@ -21,21 +20,18 @@ export default class HelpModalView {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // === Dim background overlay ===
     this.background = new Konva.Rect({
       x: 0,
       y: 0,
       width,
       height,
-      fill: "rgba(0,0,0,0.5)",
+      fill: "rgba(30, 30, 50, 0.7)",
     });
 
-    // === Modal container ===
-    const modalWidth = Math.min(640, width * 0.9);
-    const modalHeight = Math.min(520, height * 0.75);
-
+    const modalWidth = Math.min(700, width * 0.9);
+    const modalHeight = Math.min(600, height * 0.85);
     const modalX = width / 2 - modalWidth / 2;
-    const modalY = height / 2 - modalHeight / 2 - 40;
+    const modalY = height / 2 - modalHeight / 2;
 
     this.box = new Konva.Rect({
       x: modalX,
@@ -43,63 +39,105 @@ export default class HelpModalView {
       width: modalWidth,
       height: modalHeight,
       fill: "#ffffff",
-      cornerRadius: 20,
-      shadowColor: "black",
-      shadowBlur: 20,
-      shadowOpacity: 0.25,
+      cornerRadius: 25,
+      stroke: "#4f46e5",
+      strokeWidth: 6,
+      shadowColor: "#4f46e5",
+      shadowBlur: 30,
+      shadowOpacity: 0.4,
+      shadowOffset: { x: 0, y: 10 },
     });
 
-    // === Title ===
     this.title = new Konva.Text({
-      text: "Welcome to Spellventure!",
-      fontSize: 34,
-      fontFamily: "Arial Black",
-      fill: "#1e1e1e",
-      x: modalX + 20,
-      y: modalY + 25,
-      width: modalWidth - 40,
+      text: "HOW TO PLAY",
+      fontSize: 40,
+      fontFamily: "Montserrat",
+      fontStyle: "900",
+      fill: "#4f46e5",
+      x: modalX,
+      y: modalY + 35,
+      width: modalWidth,
       align: "center",
     });
 
-    // === Body text ===
+    this.separator = new Konva.Line({
+        points: [modalX + 40, modalY + 90, modalX + modalWidth - 40, modalY + 90],
+        stroke: '#e2e8f0',
+        strokeWidth: 2,
+    });
+
+    const content = `
+GENERAL
+• Drag the blue "PLAY" onto the ghost "PLAY" to start.
+
+WORDLINK
+• Click letters in the bank to form words.
+• You have 3 Hearts per round.
+• Create 15 words to advance to the next stage.
+
+MADLIBS
+• Complete the story by filling in the blanks.
+• Choose the word that fits the description, be quick, you only have 10 seconds
+    `;
+
     this.text = new Konva.Text({
-      text: `
-How to Play:
-
-• To begin the game, drag the BLUE "PLAY" to the word “PLAY” displayed on screen.
-• Choose your difficulty level.
-
-Tips:
-• You start with 3 hearts.
-• Correct spelling & longer words earn more points.
-• You can reopen this Help screen anytime by clicking the "?" icon.
-      `,
-      fontSize: 20,
-      fontFamily: "Arial",
-      fill: "#222",
-      x: modalX + 40,
-      y: modalY + 90,
-      width: modalWidth - 80,
-      lineHeight: 1.5,
+      text: content.trim(),
+      fontSize: 22,
+      fontFamily: "Montserrat",
+      fontStyle: "500",
+      fill: "#334155",
+      x: modalX + 50,
+      y: modalY + 110,
+      width: modalWidth - 100,
+      lineHeight: 1.6,
       align: "left",
     });
 
-    // === Close button (top-right corner) ===
-    this.closeButton = new Konva.Text({
-      text: "✖",
-      fontSize: 28,
-      fontFamily: "Arial Black",
-      fill: "#444",
-      x: modalX + modalWidth - 45, // right aligned
-      y: modalY + 20, // top corner
-      width: 40,
-      height: 40,
-      align: "center",
+    this.createCloseButton(modalX + modalWidth - 25, modalY + 25);
+
+    this.group.removeChildren();
+    this.group.add(
+        this.background, 
+        this.box, 
+        this.title, 
+        this.separator, 
+        this.text, 
+        this.closeButton
+    );
+  }
+
+  private createCloseButton(x: number, y: number) {
+    this.closeButton = new Konva.Group({
+        x: x,
+        y: y,
     });
 
-    // === Group assembly ===
-    this.group.removeChildren();
-    this.group.add(this.background, this.box, this.title, this.text, this.closeButton);
+    const radius = 20;
+    const diameter = radius * 2;
+
+    const circle = new Konva.Circle({
+        radius: radius,
+        fill: '#ef4444', 
+        shadowColor: 'black',
+        shadowBlur: 5,
+        shadowOpacity: 0.3
+    });
+
+    const xText = new Konva.Text({
+        text: '✕',
+        fontSize: 22,
+        fontFamily: 'Arial',
+        fill: 'white',
+        width: diameter,
+        height: diameter,
+        x: -radius,
+        y: -radius,
+        align: 'center',
+        verticalAlign: 'middle',
+        listening: false 
+    });
+
+    this.closeButton.add(circle, xText);
   }
 
   private rebuild() {
