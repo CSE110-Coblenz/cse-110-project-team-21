@@ -8,6 +8,7 @@ export default class HelpModalController {
   constructor(app: ScreenSwitcher) {
     this.app = app;
     this.view = new HelpModalView();
+
     this.view.onClose(() => this.app.closeHelp());
   }
 
@@ -16,7 +17,13 @@ export default class HelpModalController {
   }
 
   show() {
+    const group = this.view.getGroup();
+
+    // ⭐ KEY FIX: always ensure modal is the top-most node in the whole app
+    group.moveToTop();
+
     this.view.show();
+    group.getLayer()?.batchDraw();
   }
 
   hide() {

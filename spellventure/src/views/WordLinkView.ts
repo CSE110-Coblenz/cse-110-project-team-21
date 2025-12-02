@@ -37,19 +37,19 @@ export default class WordLinkView {
     this.refreshButton = this.createButton(
       window.innerWidth / 2 - 230,
       window.innerHeight - 100,
-      "#f59e0b",
+      "#facc15",
       "🔄 Refresh"
     );
     this.submitButton = this.createButton(
       window.innerWidth / 2 + 50,
       window.innerHeight - 100,
-      "#22c55e",
+      "#4ade80",
       "✅ Submit"
     );
     this.hintButton = this.createButton(
       window.innerWidth / 2 - 90,
       window.innerHeight - 180,
-      "#3b82f6",
+      "#93c5fd",
       "💡 Hint"
     );
 
@@ -63,20 +63,25 @@ export default class WordLinkView {
     const totalHearts = 3;
     const heartIcons = "❤️".repeat(hearts) + "🤍".repeat(totalHearts - hearts);
 
+    const hudY = 80; // just under NavBar
+
     const scoreText = new Konva.Text({
       text: `Score: ${score}`,
       x: 30,
-      y: 70,
+      y: hudY,
       fontSize: 26,
-      fill: "#222",
+      fontFamily: "Comic Sans MS, system-ui, sans-serif",
+      fill: "#111827",
       fontStyle: "bold",
     });
 
     const heartsText = new Konva.Text({
       text: heartIcons,
       x: 200,
-      y: 72,
+      y: hudY + 2,
       fontSize: 26,
+      fontFamily: "Comic Sans MS, system-ui, sans-serif",
+      fill: "#ef4444",
     });
 
     this.hudGroup.add(scoreText, heartsText);
@@ -98,9 +103,10 @@ export default class WordLinkView {
       width: 180,
       height: 60,
       fill: color,
-      cornerRadius: 12,
-      shadowColor: "rgba(0,0,0,0.3)",
-      shadowBlur: 8,
+      cornerRadius: 18,
+      shadowColor: "rgba(15,23,42,0.25)",
+      shadowBlur: 10,
+      shadowOffsetY: 4,
       listening: true,
     });
 
@@ -111,7 +117,8 @@ export default class WordLinkView {
       width: 180,
       align: "center",
       fontSize: 22,
-      fill: "#fff",
+      fontFamily: "Comic Sans MS, system-ui, sans-serif",
+      fill: "#111827",
       fontStyle: "bold",
       listening: false,
     });
@@ -119,6 +126,27 @@ export default class WordLinkView {
     buttonGroup.add(button, label);
     buttonGroup.listening(true);
     this.group.add(buttonGroup);
+
+    // Gentle hover animation
+    buttonGroup.on("mouseenter", () => {
+      document.body.style.cursor = "pointer";
+      buttonGroup.to({
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 0.1,
+      });
+      this.group.getLayer()?.batchDraw();
+    });
+
+    buttonGroup.on("mouseleave", () => {
+      document.body.style.cursor = "default";
+      buttonGroup.to({
+        scaleX: 1,
+        scaleY: 1,
+        duration: 0.1,
+      });
+      this.group.getLayer()?.batchDraw();
+    });
 
     button.on("click tap", () => {
       if (text.includes("Refresh")) this.refreshHandler?.();
@@ -146,28 +174,49 @@ export default class WordLinkView {
         y,
         width: 40,
         height: 40,
-        stroke: "#000",
+        stroke: i === 0 ? "#22c55e" : "#a5b4fc",
         strokeWidth: 2,
-        fill: i === 0 ? "#16a34a" : "#e5e7eb",
-        cornerRadius: 6,
-        listening: i !== 0
+        fill: i === 0 ? "#4ade80" : "#e5e7eb",
+        cornerRadius: 8,
+        listening: i !== 0,
       });
 
       const text = new Konva.Text({
         text: i === 0 ? firstLetter.toUpperCase() : "",
         x: box.x(),
-        y: box.y() + 8,
+        y: box.y() + 6,
         width: 40,
         align: "center",
         fontSize: 26,
-        fill: i === 0 ? "#fff" : "#111",
+        fontFamily: "Comic Sans MS, system-ui, sans-serif",
+        fill: i === 0 ? "#ffffff" : "#111827",
         listening: false,
       });
 
       if (i !== 0) {
-        const index = i; 
+        const index = i;
         box.on("click tap", () => {
           if (this.boxClickHandler) this.boxClickHandler(index);
+        });
+
+        box.on("mouseenter", () => {
+          document.body.style.cursor = "pointer";
+          box.to({
+            scaleX: 1.05,
+            scaleY: 1.05,
+            duration: 0.08,
+          });
+          this.group.getLayer()?.batchDraw();
+        });
+
+        box.on("mouseleave", () => {
+          document.body.style.cursor = "default";
+          box.to({
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.08,
+          });
+          this.group.getLayer()?.batchDraw();
         });
       }
 
@@ -189,7 +238,6 @@ export default class WordLinkView {
     const spacing = 70;
 
     letters.forEach((char, i) => {
-      // Use the helper method you created!
       this.createSingleTile(char, startX + i * spacing, startY);
     });
 
@@ -198,56 +246,76 @@ export default class WordLinkView {
 
   // Helper to create a tile (refactored for reuse)
   private createSingleTile(char: string, x: number, y: number) {
-      const tile = new Konva.Text({
-        text: char.toUpperCase(),
-        x: x,
-        y: y,
-        fontSize: 32,
-        fill: "#4f46e5",
-        fontStyle: "bold",
-        shadowColor: "rgba(0,0,0,0.25)",
-        shadowBlur: 3,
-        listening: true,
-      });
+    const tile = new Konva.Text({
+      text: char.toUpperCase(),
+      x,
+      y,
+      fontSize: 32,
+      fontFamily: "Comic Sans MS, system-ui, sans-serif",
+      fill: "#4f46e5",
+      fontStyle: "bold",
+      shadowColor: "rgba(0,0,0,0.2)",
+      shadowBlur: 4,
+      listening: true,
+    });
 
-      tile.on("click tap", () => {
-        if (this.letterClickHandler) {
-          this.letterClickHandler(char.toLowerCase());
-        }
+    tile.on("mouseenter", () => {
+      document.body.style.cursor = "pointer";
+      tile.to({
+        scaleX: 1.1,
+        scaleY: 1.1,
+        duration: 0.08,
       });
+      this.group.getLayer()?.batchDraw();
+    });
 
-      this.letterTiles.push({ tile, letter: char });
-      this.group.add(tile);
+    tile.on("mouseleave", () => {
+      document.body.style.cursor = "default";
+      tile.to({
+        scaleX: 1,
+        scaleY: 1,
+        duration: 0.08,
+      });
+      this.group.getLayer()?.batchDraw();
+    });
+
+    tile.on("click tap", () => {
+      if (this.letterClickHandler) {
+        this.letterClickHandler(char.toLowerCase());
+      }
+    });
+
+    this.letterTiles.push({ tile, letter: char });
+    this.group.add(tile);
   }
 
   /** Returns a letter to the bank visually */
   addLetterToBank(letter: string): void {
     const startY = window.innerHeight - 250;
-    
 
     const spacing = 70;
-    let nextX = window.innerWidth / 2; 
-    
+    let nextX = window.innerWidth / 2;
+
     if (this.letterTiles.length > 0) {
-        const lastTile = this.letterTiles[this.letterTiles.length - 1].tile;
-        nextX = lastTile.x() + spacing;
+      const lastTile = this.letterTiles[this.letterTiles.length - 1].tile;
+      nextX = lastTile.x() + spacing;
     } else {
-         nextX = window.innerWidth / 2;
+      nextX = window.innerWidth / 2;
     }
 
     this.createSingleTile(letter, nextX, startY);
-    
+
     this.group.getLayer()?.batchDraw();
   }
 
   /** Clears a specific box by index */
   clearLetterAtIndex(index: number): void {
     if (index > 0 && index < this.letterTexts.length) {
-        this.letterTexts[index].text("");
-        this.group.getLayer()?.batchDraw();
+      this.letterTexts[index].text("");
+      this.group.getLayer()?.batchDraw();
     }
   }
-   
+
   /** Removes a tile from the letter bank once used or hinted */
   removeLetterTile(letter: string): void {
     const index = this.letterTiles.findIndex((t) => t.letter === letter);
@@ -307,11 +375,12 @@ export default class WordLinkView {
 
     const text = new Konva.Text({
       text: msg,
-      x: window.innerWidth / 2 - 100,
-      y: window.innerHeight / 2 - 150,
-      width: 200,
+      x: window.innerWidth / 2 - 120,
+      y: window.innerHeight / 2 - 160,
+      width: 240,
       align: "center",
       fontSize: 26,
+      fontFamily: "Comic Sans MS, system-ui, sans-serif",
       fill: color,
       fontStyle: "bold",
     });
@@ -333,22 +402,24 @@ export default class WordLinkView {
       pw.letters.forEach((l) => {
         const rect = new Konva.Rect({
           x: 100 + l.x * 40,
-          y: 100 + l.y * 40,
+          y: 120 + l.y * 40,
           width: 38,
           height: 38,
-          stroke: "#ccc",
-          cornerRadius: 4,
+          stroke: "#e5e7eb",
+          fill: "#f9fafb",
+          cornerRadius: 6,
         });
         const txt = new Konva.Text({
           x: 100 + l.x * 40,
-          y: 100 + l.y * 40 + 6,
+          y: 120 + l.y * 40 + 6,
           width: 38,
           height: 38,
           text: l.char.toUpperCase(),
           align: "center",
           verticalAlign: "middle",
           fontSize: 20,
-          fill: "#555",
+          fontFamily: "Comic Sans MS, system-ui, sans-serif",
+          fill: "#374151",
         });
         gridGroup.add(rect, txt);
       });
@@ -360,15 +431,13 @@ export default class WordLinkView {
 
   /** Adds a solved word onto a clean vertical column on the left side */
   addWordToGrid(placedWord: PlacedWord): void {
-    // Persistent offset counter (so each new word stacks lower)
     if (!(this as any)._solvedCount) (this as any)._solvedCount = 0;
     const solvedCount = (this as any)._solvedCount++;
 
     const gridGroup = new Konva.Group();
 
-    // Starting anchor on the left side
-    const baseX = 100; //  fixed left margin
-    const baseY = 120 + solvedCount * 50; //  stacks words downward
+    const baseX = 100;
+    const baseY = 140 + solvedCount * 50;
 
     placedWord.word.split("").forEach((char, i) => {
       const rect = new Konva.Rect({
@@ -376,10 +445,10 @@ export default class WordLinkView {
         y: baseY,
         width: 34,
         height: 34,
-        fill: "#f3f4f6",
-        stroke: "#000",
+        fill: "#e5e7eb",
+        stroke: "#9ca3af",
         strokeWidth: 1,
-        cornerRadius: 4,
+        cornerRadius: 6,
       });
 
       const text = new Konva.Text({
@@ -389,7 +458,8 @@ export default class WordLinkView {
         width: 34,
         align: "center",
         fontSize: 20,
-        fill: "#111",
+        fontFamily: "Comic Sans MS, system-ui, sans-serif",
+        fill: "#111827",
       });
 
       gridGroup.add(rect, text);
@@ -405,13 +475,13 @@ export default class WordLinkView {
   }
 
   getHintedLetters(): string[] {
-      const letters: string[] = [];
-      this.lockedHintIndices.forEach(index => {
-        if (this.letterTexts[index]) {
-          letters.push(this.letterTexts[index].text().toLowerCase());
-        }
-      });
-      return letters;
+    const letters: string[] = [];
+    this.lockedHintIndices.forEach((index) => {
+      if (this.letterTexts[index]) {
+        letters.push(this.letterTexts[index].text().toLowerCase());
+      }
+    });
+    return letters;
   }
 
   isLockedHint(index: number): boolean {
