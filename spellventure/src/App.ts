@@ -19,8 +19,7 @@ export default class App implements ScreenSwitcher {
   private menuController: MenuScreenController;
   private gameController: GameScreenController;
   private resultsController: ResultsScreenController;
-
-    private miniResultsController: MiniResultsScreenController;
+  private miniResultsController: MiniResultsScreenController;
 
   // Global UI
   private navBarController: NavBarController;
@@ -105,47 +104,39 @@ export default class App implements ScreenSwitcher {
   /** ===== ScreenSwitcher API ===== */
 
   switchToScreen(screen: Screen, pushToHistory: boolean = true): void {
-  // Hide all screens
-  this.menuController?.hide?.();
-  this.gameController?.hide?.();
-  this.resultsController?.hide?.();
+    this.menuController?.hide?.();
+    this.gameController?.hide?.();
+    this.resultsController?.hide?.();
 
     // Show target screen
     switch (screen.type) {
       case "menu":
         this.menuController?.show?.();
         break;
-      // Note: difficulty screen removed from runtime pipeline.
+
       case "game":
         this.gameController?.show?.();
 
-        // If requested, resume directly to the Mad Libs or WordLink phase inside the game
-        // Do this BEFORE applying bonusHearts so the previous hearts state is restored first.
-          // Log incoming screen flags for diagnostics
-          console.log('App.switchToScreen: game screen flags ->', {
-            openMadLib: (screen as any).openMadLib,
-            openWordLink: (screen as any).openWordLink,
-            bonusHearts: (screen as any).bonusHearts,
-          });
+        if ((screen as any).openMadLib) {
+          (this.gameController as any)?.resumeToMadLib?.();
+        }
 
-          if ((screen as any).openMadLib) {
-            console.log('App.switchToScreen: resuming to MadLib phase');
-            (this.gameController as any)?.resumeToMadLib?.();
-          }
+        if ((screen as any).openWordLink) {
+          (this.gameController as any)?.resumeToWordLink?.();
+        }
 
-          if ((screen as any).openWordLink) {
-            console.log('App.switchToScreen: resuming to WordLink phase');
-            (this.gameController as any)?.resumeToWordLink?.();
-          }
-
-          if ((screen as any).bonusHearts && (screen as any).bonusHearts > 0) {
-            // sent back earned hearts from mini game if any
-            console.log('App.switchToScreen: applying bonusHearts ->', (screen as any).bonusHearts);
-            this.gameController?.addHearts?.((screen as any).bonusHearts);
-          }
+        if ((screen as any).bonusHearts && (screen as any).bonusHearts > 0) {
+          this.gameController?.addHearts?.((screen as any).bonusHearts);
+        }
         break;
 
       case "result":
+
+        const wordLinkScore = (screen as any).wordLinkScore || 0;
+        const finalHearts = (screen as any).hearts || 0;
+
+        this.resultsController?.setFinalScores(wordLinkScore, finalHearts);
+
         this.resultsController?.show?.();
         break;
 
@@ -156,8 +147,7 @@ export default class App implements ScreenSwitcher {
           bonusHearts: screen.bonusHearts,
           from: screen.from,
         });
-        return;
-
+        return; 
 
       // select a mini game
       case "miniGameSelect":
@@ -170,7 +160,7 @@ export default class App implements ScreenSwitcher {
             controller.start();
           }
         );
-        return;
+        return; 
 
       case "drop":
         import("./screens/WordsDropGame/WordsDropGameController").then(
@@ -180,14 +170,14 @@ export default class App implements ScreenSwitcher {
             new WordsDropGameController(root,this);   
           }
         );
-        return;
+        return; 
 
       default:
         console.warn(`⚠️ Unknown screen type: ${screen.type}`);
     }
 
     // Always show navbar (global HUD)
-  this.navBarController?.show?.();
+    this.navBarController?.show?.();
 
     // Manage navigation history
     if (pushToHistory) this.history.push(screen);
@@ -219,6 +209,10 @@ export default class App implements ScreenSwitcher {
     this.history = [];
     this.clearGameContent();
     this.switchToScreen({ type: "menu" }, true);
+
+    if (this.gameController && typeof (this.gameController as any).reset === 'function') {
+        (this.gameController as any).reset();
+    }
 
     if (!this.helpClosedOnce) {
       this.openHelp();
@@ -254,8 +248,8 @@ export default class App implements ScreenSwitcher {
     this.stage.width(width);
     this.stage.height(height);
 
-  (this.menuController as any).onResize?.(width, height);
-  (this.gameController as any).onResize?.(width, height);
+    (this.menuController as any).onResize?.(width, height);
+    (this.gameController as any).onResize?.(width, height);
     (this.resultsController as any).onResize?.(width, height);
     (this.navBarController as any).onResize?.(width, height);
     (this.helpModalController as any).onResize?.(width, height);

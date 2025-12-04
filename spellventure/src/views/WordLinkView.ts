@@ -8,6 +8,10 @@ import type { PlacedWord } from "../utils/WordGridLayout";
 
 export default class WordLinkView {
   private group: Konva.Group;
+  
+  private backgroundGroup: Konva.Group;
+  private backgroundAnim: Konva.Animation;
+
   private letterBoxes: Konva.Rect[] = [];
   private letterTexts: Konva.Text[] = [];
   private letterTiles: { tile: Konva.Text; letter: string }[] = [];
@@ -28,6 +32,17 @@ export default class WordLinkView {
 
   constructor() {
     this.group = new Konva.Group();
+
+    // === Background ===
+    this.createBackground();
+    this.group.add(this.backgroundGroup);
+
+    this.backgroundAnim = new Konva.Animation((frame) => {
+      const timeDiff = (frame?.timeDiff || 0) / 1000; 
+      this.animateBackground(timeDiff);
+    }, this.group.getLayer());
+
+    this.backgroundAnim.start();
 
     // === HUD ===
     this.drawHUD(0, 3);
@@ -54,6 +69,68 @@ export default class WordLinkView {
     );
 
     this.group.add(this.refreshButton, this.submitButton, this.hintButton);
+  }
+
+  private createBackground(): void {
+    this.backgroundGroup = new Konva.Group({ listening: false });
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ?!@#&";
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const count = 150; 
+
+    for (let i = 0; i < count; i++) {
+      const char = letters.charAt(Math.floor(Math.random() * letters.length));
+      const scale = 0.5 + Math.random(); 
+
+      const letter = new Konva.Text({
+        text: char,
+        x: Math.random() * width,
+        y: Math.random() * height,
+        fontSize: 40, 
+        fontFamily: "Arial Black",
+        fill: Math.random() > 0.6 ? "#cbd5e1" : (Math.random() > 0.5 ? "#c7d2fe" : "#f5d0fe"), 
+        opacity: 0.15 * scale, 
+        rotation: Math.random() * 360,
+        scaleX: scale,
+        scaleY: scale,
+      });
+
+      letter.setAttr('velocity', 20 * scale); 
+      letter.setAttr('rotationSpeed', (Math.random() - 0.5) * 50); 
+
+      this.backgroundGroup.add(letter);
+    }
+  }
+
+  private animateBackground(dt: number): void {
+    const height = window.innerHeight;
+    
+    this.backgroundGroup.getChildren().forEach((node) => {
+      const letter = node as Konva.Text;
+      const velocity = letter.getAttr('velocity');
+      const rotSpeed = letter.getAttr('rotationSpeed');
+
+      let newY = letter.y() - (velocity * dt);
+      
+      letter.rotation(letter.rotation() + (rotSpeed * dt));
+
+      if (newY < -50) {
+        newY = height + 50;
+        letter.x(Math.random() * window.innerWidth); 
+      }
+
+      letter.y(newY);
+    });
+  }
+
+  show(): void {
+    this.group.visible(true);
+    this.backgroundAnim.start();
+  }
+
+  hide(): void {
+    this.group.visible(false);
+    this.backgroundAnim.stop();
   }
 
   /** === HUD === */
@@ -120,6 +197,14 @@ export default class WordLinkView {
     buttonGroup.listening(true);
     this.group.add(buttonGroup);
 
+    button.on("mouseenter", () => {
+      document.body.style.cursor = "pointer"; 
+    });
+
+    button.on("mouseleave", () => {
+      document.body.style.cursor = "default"; 
+    });
+
     button.on("click tap", () => {
       if (text.includes("Refresh")) this.refreshHandler?.();
       else if (text.includes("Submit")) this.submitHandler?.();
@@ -166,6 +251,15 @@ export default class WordLinkView {
 
       if (i !== 0) {
         const index = i; 
+        
+        box.on("mouseenter", () => {
+          document.body.style.cursor = "pointer"; 
+        })
+
+        box.on("mouseleave", () => {
+          document.body.style.cursor = "default"; 
+        })
+
         box.on("click tap", () => {
           if (this.boxClickHandler) this.boxClickHandler(index);
         });
@@ -189,14 +283,12 @@ export default class WordLinkView {
     const spacing = 70;
 
     letters.forEach((char, i) => {
-      // Use the helper method you created!
       this.createSingleTile(char, startX + i * spacing, startY);
     });
 
     this.group.getLayer()?.batchDraw();
   }
 
-  // Helper to create a tile (refactored for reuse)
   private createSingleTile(char: string, x: number, y: number) {
       const tile = new Konva.Text({
         text: char.toUpperCase(),
@@ -210,7 +302,17 @@ export default class WordLinkView {
         listening: true,
       });
 
+      tile.on("mouseenter", () => {
+        document.body.style.cursor = "pointer"; 
+      })
+
+      tile.on("mouseleave", () => {
+        document.body.style.cursor = "default"; 
+      })
+
       tile.on("click tap", () => {
+        document.body.style.cursor = "default";
+
         if (this.letterClickHandler) {
           this.letterClickHandler(char.toLowerCase());
         }
@@ -224,7 +326,6 @@ export default class WordLinkView {
   addLetterToBank(letter: string): void {
     const startY = window.innerHeight - 250;
     
-
     const spacing = 70;
     let nextX = window.innerWidth / 2; 
     
@@ -360,15 +461,13 @@ export default class WordLinkView {
 
   /** Adds a solved word onto a clean vertical column on the left side */
   addWordToGrid(placedWord: PlacedWord): void {
-    // Persistent offset counter (so each new word stacks lower)
     if (!(this as any)._solvedCount) (this as any)._solvedCount = 0;
     const solvedCount = (this as any)._solvedCount++;
 
     const gridGroup = new Konva.Group();
 
-    // Starting anchor on the left side
-    const baseX = 100; //  fixed left margin
-    const baseY = 120 + solvedCount * 50; //  stacks words downward
+    const baseX = 100; 
+    const baseY = 120 + solvedCount * 50; 
 
     placedWord.word.split("").forEach((char, i) => {
       const rect = new Konva.Rect({
@@ -399,7 +498,6 @@ export default class WordLinkView {
     this.group.getLayer()?.batchDraw();
   }
 
-  /** Returns the visible letters currently filled in boxes */
   getVisibleWord(): string {
     return this.letterTexts.map((t) => t.text()).join("");
   }
@@ -418,7 +516,6 @@ export default class WordLinkView {
     return this.lockedHintIndices.has(index);
   }
 
-  // === Event registration ===
   onSubmitClicked(cb: () => void) {
     this.submitHandler = cb;
   }
@@ -435,7 +532,6 @@ export default class WordLinkView {
     this.boxClickHandler = cb;
   }
 
-  /** Returns the Konva group for the game layer */
   getGroup(): Konva.Group {
     return this.group;
   }

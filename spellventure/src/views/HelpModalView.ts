@@ -137,6 +137,14 @@ MADLIBS
         listening: false 
     });
 
+    circle.on("mouseenter", () => {
+      document.body.style.cursor = "pointer"; 
+    }); 
+
+    circle.on("mouseleave", () => {
+      document.body.style.cursor = "default"; 
+    })
+
     this.closeButton.add(circle, xText);
   }
 

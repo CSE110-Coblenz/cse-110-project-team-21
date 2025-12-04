@@ -17,8 +17,12 @@ export default class MenuScreenView {
       this.animateBackground(timeDiff);
     }, this.group.getLayer());
 
-    document.fonts.ready.then(() => {
-      this.group.getLayer()?.batchDraw();
+    Promise.all([
+        document.fonts.load("130px Nabla"),
+        document.fonts.load("100px Kalnia Glaze"),
+        document.fonts.load("100px Montserrat") 
+    ]).then(() => {
+        this.group.getLayer()?.batchDraw();
     });
   }
 

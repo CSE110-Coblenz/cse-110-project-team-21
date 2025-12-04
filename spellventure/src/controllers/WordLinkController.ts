@@ -176,11 +176,13 @@ const word = this.placedWords[this.currentWordIndex].word;
     const word = this.placedWords[this.currentWordIndex].word;
     const len = word.length;
 
-    let maxHints = 3; 
+    let maxHints = 4; 
     if (len <= 4) {
       maxHints = 1; 
     } else if (len <= 6) {
       maxHints = 2; 
+    } else if (len <= 8) {
+      maxHints = 3; 
     }
 
     if (this.usedHints >= maxHints) {
