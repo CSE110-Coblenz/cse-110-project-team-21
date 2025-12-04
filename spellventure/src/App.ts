@@ -130,15 +130,15 @@ export default class App implements ScreenSwitcher {
         }
         break;
 
-      case "result":
-
+      case "result": {
         const wordLinkScore = (screen as any).wordLinkScore || 0;
         const finalHearts = (screen as any).hearts || 0;
 
         this.resultsController?.setFinalScores(wordLinkScore, finalHearts);
 
         this.resultsController?.show?.();
-        break;
+        break;        
+      }
 
       case "mini_result":
         this.miniResultsController?.show?.({

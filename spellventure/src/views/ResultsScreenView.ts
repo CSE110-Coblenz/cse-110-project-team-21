@@ -51,9 +51,6 @@ export default class ResultsScreenView {
   }
 
   private buildUI(): void {
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-
     this.card = new Konva.Rect({
       width: 500,
       height: 400,

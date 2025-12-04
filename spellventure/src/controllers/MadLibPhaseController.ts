@@ -4,7 +4,6 @@
  *        passed from the Word Link phase.
  */
 
-import Konva from "konva";
 import MadLibPhaseView from "../views/MadLibPhaseView";
 import type { ScreenSwitcher } from "../types";
 
