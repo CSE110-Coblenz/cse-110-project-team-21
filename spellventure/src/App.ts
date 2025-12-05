@@ -130,8 +130,7 @@ export default class App implements ScreenSwitcher {
         }
         break;
 
-      case "result":
-
+      case "result": {
         const wordLinkScore = (screen as any).wordLinkScore || 0;
         const finalHearts = (screen as any).hearts || 0;
 
@@ -139,6 +138,7 @@ export default class App implements ScreenSwitcher {
 
         this.resultsController?.show?.();
         break;
+      }
 
       case "mini_result":
         this.miniResultsController?.show?.({
