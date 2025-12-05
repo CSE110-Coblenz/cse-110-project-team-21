@@ -11,8 +11,6 @@ export default class NavBarView {
   private bg: Konva.Rect;
   private soundIcon: Konva.Text;
 
-  
-
   constructor() {
     this.group = new Konva.Group();
     this.build();
@@ -67,7 +65,7 @@ export default class NavBarView {
       fontSize: 20,
       fill: "#e5e7eb",
     });
-    this.soundIcon.x(this.helpButton.x() - 40); // <-- put on the left of the '?' by 40px
+    this.soundIcon.x(this.helpButton.x() - 40); 
     this.soundIcon.y(18);
 
     // === Add to group ===

@@ -1,15 +1,15 @@
 /**
  * @file MadLibPhaseView.ts
  * @brief Renders and manages the Mad Libs story paragraph, word bank, hearts,
- *        feedback messages, timed popups, and mini-game redirects.
+ * feedback messages, timed popups, and mini-game redirects.
  *
  * This class is the **view layer** for the Mad Libs phase:
- *  - It takes a story template string with `[type]` placeholders.
- *  - It draws those placeholders as interactive blanks in a paragraph layout.
- *  - It displays a word bank (currently optional / commented out).
- *  - It tracks hearts and shows feedback when the player makes mistakes.
- *  - It shows a timed popup for choosing words for a blank.
- *  - It redirects to the mini-game selection when hearts reach zero.
+ * - It takes a story template string with `[type]` placeholders.
+ * - It draws those placeholders as interactive blanks in a paragraph layout.
+ * - It displays a word bank (currently optional / commented out).
+ * - It tracks hearts and shows feedback when the player makes mistakes.
+ * - It shows a timed popup for choosing words for a blank.
+ * - It redirects to the mini-game selection when hearts reach zero.
  */
 
 import Konva from "konva";
@@ -18,27 +18,38 @@ import Konva from "konva";
  * @brief Simple data structure used to represent typed words for blanks.
  *
  * Each word carries:
- *  - `word`: the literal string shown to the player.
- *  - `type`: the grammatical/semantic role (e.g., "noun", "verb", "adjective").
- *            This must match the placeholder text inside `[ ]` in the story
- *            for the word to be considered a "correct" match.
+ * - `word`: the literal string shown to the player.
+ * - `type`: the grammatical/semantic role (e.g., "noun", "verb", "adjective").
+ * This must match the placeholder text inside `[ ]` in the story
+ * for the word to be considered a "correct" match.
  */
 interface WordData {
   word: string;
   type: string;
 }
 
+interface LayoutItem {
+  type: 'text' | 'blank';
+  content: string; 
+  width: number;
+  height: number;
+  node?: Konva.Text; 
+}
+
 export default class MadLibPhaseView {
   /** Root Konva group for everything in the Mad Lib phase. */
   private group: Konva.Group;
+
+  private backgroundGroup: Konva.Group;
+  private backgroundAnim: Konva.Animation;
 
   /** Original story template containing `[type]` placeholders. */
   private storyTemplate: string;
 
   /**
    * Words passed in from GameScreenController:
-   *  - Each has `word` + `type`.
-   *  - These represent the "correct" answers for blanks in the story.
+   * - Each has `word` + `type`.
+   * - These represent the "correct" answers for blanks in the story.
    */
   private wordBank: WordData[];
 
@@ -58,9 +69,9 @@ export default class MadLibPhaseView {
 
   /**
    * Represents each word tile in the optional word bank area.
-   *  - `node`: the Konva.Text node for the word.
-   *  - `word`: the string value.
-   *  - `type`: the word's category, used to match blanks.
+   * - `node`: the Konva.Text node for the word.
+   * - `word`: the string value.
+   * - `type`: the word's category, used to match blanks.
    */
   private wordTiles: { node: Konva.Text; word: string; type: string }[] = [];
 
@@ -84,8 +95,8 @@ export default class MadLibPhaseView {
   /**
    * If a popup is active, this holds a reference to the dedicated popup layer.
    * That layer:
-   *   - sits on top of the main game layer,
-   *   - contains the dim background overlay, popup rectangle, buttons, timer.
+   * - sits on top of the main game layer,
+   * - contains the dim background overlay, popup rectangle, buttons, timer.
    */
   private activePopupLayer: Konva.Layer | null = null;
 
@@ -102,16 +113,6 @@ export default class MadLibPhaseView {
    * can cancel it when the popup is closed early.
    */
   private popupCountdownInterval: number | null = null;
-
-  /**
-   * @brief Allows external code (controller) to register a callback that fires
-   *        whenever any blank in the story is filled.
-   *
-   * @param cb Function called with no arguments when a blank is filled.
-   */
-  onBlankFilled(cb: () => void): void {
-    this.blankFilledHandler = cb;
-  }
 
   /**
    * A static library of "incorrect" words. These are used to populate
@@ -145,163 +146,266 @@ export default class MadLibPhaseView {
 
   /** Current hearts remaining in the Mad Lib phase. */
   private hearts = 3;
+  
+  private cardLayout: { x: number; y: number; width: number; height: number } = { x: 0, y: 0, width: 0, height: 0 };
 
   /**
    * @brief Constructor wires up the story template, word bank, and HUD.
    *
    * @param story The story template string containing `[type]` placeholders.
    * @param words The word set from the game phase `{ word, type }[]`.
-   *              These represent the "correct" options for the blanks.
+   * These represent the "correct" options for the blanks.
    */
   constructor(story: string, words: WordData[]) {
     this.group = new Konva.Group();
     this.storyTemplate = story;
     this.wordBank = words;
 
-    // Render the paragraph with blanks from the story template
+    this.createBackground();
+    this.group.add(this.backgroundGroup);
+
+    this.backgroundAnim = new Konva.Animation((frame) => {
+      const timeDiff = (frame?.timeDiff || 0) / 1000; 
+      this.animateBackground(timeDiff);
+    }, this.group.getLayer());
+    
     this.drawStory();
 
-  // Optionally render the word bank below (currently disabled).
-  // this.drawWordBank();
-
-    // Show HUD elements (hearts + feedback text)
     this.drawHUD();
 
-    // Handle window resize by re-drawing everything
     window.addEventListener("resize", () => this.onResize());
   }
 
+  show(): void {
+    this.group.visible(true);
+    this.backgroundAnim.start();
+  }
+
+  hide(): void {
+    this.group.visible(false);
+    this.backgroundAnim.stop();
+  }
+
+  private createBackground(): void {
+    this.backgroundGroup = new Konva.Group({ listening: false });
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ?!@#&";
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const count = 150; 
+
+    for (let i = 0; i < count; i++) {
+      const char = letters.charAt(Math.floor(Math.random() * letters.length));
+      const scale = 0.5 + Math.random(); 
+
+      const letter = new Konva.Text({
+        text: char,
+        x: Math.random() * width,
+        y: Math.random() * height,
+        fontSize: 40, 
+        fontFamily: "Arial Black",
+        fill: Math.random() > 0.6 ? "#cbd5e1" : (Math.random() > 0.5 ? "#c7d2fe" : "#f5d0fe"), 
+        opacity: 0.15 * scale, 
+        rotation: Math.random() * 360,
+        scaleX: scale,
+        scaleY: scale,
+      });
+
+      letter.setAttr('velocity', 20 * scale); 
+      letter.setAttr('rotationSpeed', (Math.random() - 0.5) * 50); 
+
+      this.backgroundGroup.add(letter);
+    }
+  }
+
+  private animateBackground(dt: number): void {
+    const height = window.innerHeight;
+    
+    this.backgroundGroup.getChildren().forEach((node) => {
+      const letter = node as Konva.Text;
+      const velocity = letter.getAttr('velocity');
+      const rotSpeed = letter.getAttr('rotationSpeed');
+
+      let newY = letter.y() - (velocity * dt);
+      letter.rotation(letter.rotation() + (rotSpeed * dt));
+
+      if (newY < -50) {
+        newY = height + 50;
+        letter.x(Math.random() * window.innerWidth); 
+      }
+      letter.y(newY);
+    });
+  }
+
   /** ===========================
-   *  STORY RENDERING
-   *  ===========================
+   * STORY RENDERING
+   * ===========================
    */
 
   /**
    * @brief Parses `storyTemplate` and renders it as multiple Konva.Text nodes.
    *
    * For each token in the story:
-   *  - Normal words are drawn as plain text.
-   *  - `[type]` placeholders are turned into interactive blanks:
-   *      - A visible blank: "__________"
-   *      - A type label (e.g., "noun") just under the blank
+   * - Normal words are drawn as plain text.
+   * - `[type]` placeholders are turned into interactive blanks:
+   * - A visible blank: "__________"
+   * - A type label (e.g., "noun") just under the blank
    *
    * The method also:
-   *  - Handles basic word wrapping using a max line width.
-   *  - Attaches click handlers to each blank so that clicking opens
-   *    a multiple-choice popup.
+   * - Handles basic word wrapping using a max line width.
+   * - Attaches click handlers to each blank so that clicking opens
+   * a multiple-choice popup.
    */
   private drawStory(): void {
-    // Vertical start for the paragraph and typical line spacing
-    const paragraphY = 100;
-    const lineHeight = 40;
-
-    // Horizontal margins and text wrapping width
-    const marginX = window.innerWidth * 0.1;
-    const maxWidth = window.innerWidth * 0.8;
-
-    // We'll walk the string and emit alternating text segments and blanks.
-    // This is more robust than a simple split-on-space because it handles
-    // punctuation, newlines, and multiple placeholders per token.
-    let x = marginX;
-    let y = paragraphY;
-
-    const placeholderRe = /\[([^\]]+)\]/g;
-    let lastIndex = 0;
-    let m: RegExpExecArray | null;
-
-    // Helper to render an arbitrary text segment (may contain many words)
-    const renderTextSegment = (segment: string) => {
-      if (!segment) return;
-      const parts = segment.split(/(\s+)/); // keep whitespace tokens
-      for (const part of parts) {
-        if (part === "") continue;
-        // If it's pure whitespace, advance x by measuring a single space
-        if (/^\s+$/.test(part)) {
-          const space = new Konva.Text({
-            text: part,
-            x,
-            y,
-            fontSize: 22,
-            fontFamily: "system-ui",
-            fill: "#111",
-            name: "story-node",
-          });
-
-          // wrapping: if the whitespace itself is beyond margin, move to next line
-          if (x + space.width() > marginX + maxWidth) {
-            x = marginX;
-            y += lineHeight;
-            space.x(x);
-            space.y(y);
-          }
-
-          this.group.add(space);
-          x += space.width();
-          continue;
-        }
-
-        // Normal visible word
-        const text = new Konva.Text({
-          text: part,
-          x,
-          y,
-          fontSize: 22,
-          fontFamily: "system-ui",
-          fill: "#111",
-          name: "story-node",
+    const maxWidth = 800; 
+    const lineHeight = 60; 
+    const startX = (window.innerWidth - maxWidth) / 2;
+    
+    const items: LayoutItem[] = [];
+    
+    const parts = this.storyTemplate.split(/(\[[^\]]+\]|\s+)/).filter(p => p.length > 0);
+    
+    parts.forEach(part => {
+      if (part.startsWith('[') && part.endsWith(']')) {
+        const type = part.slice(1, -1);
+        items.push({
+          type: 'blank',
+          content: type,
+          width: 140, 
+          height: 40
         });
-
-        if (x + text.width() > marginX + maxWidth) {
-          x = marginX;
-          y += lineHeight;
-          text.x(x);
-          text.y(y);
-        }
-
-        this.group.add(text);
-        x += text.width();
+      } else if (!/^\s+$/.test(part)) {
+        const tempText = new Konva.Text({
+            text: part,
+            fontSize: 24,
+            fontFamily: "Montserrat, sans-serif",
+            fontStyle: "500",
+        });
+        items.push({
+          type: 'text',
+          content: part,
+          width: tempText.width(),
+          height: tempText.height()
+        });
       }
-    };
+    });
 
-    while ((m = placeholderRe.exec(this.storyTemplate)) !== null) {
-      const matchIndex = m.index;
-      const type = m[1];
+    const storyGroup = new Konva.Group();
+    let currentLine: LayoutItem[] = [];
+    let currentLineWidth = 0;
+    let y = 0;
 
-      // Render any text before the placeholder
-      const before = this.storyTemplate.slice(lastIndex, matchIndex);
-      renderTextSegment(before);
+    const flushLine = () => {
+      if (currentLine.length === 0) return;
 
-      // Render blank
-      const blankText = new Konva.Text({
-        text: "__________ ",
-        x,
-        y,
-        fontSize: 22,
-        fontFamily: "system-ui",
-        fill: "#2563eb",
-        fontStyle: "normal",
-        name: "story-node",
+      const lineStartX = (maxWidth - currentLineWidth) / 2;
+      let xObj = lineStartX;
+
+      currentLine.forEach(item => {
+        if (item.type === 'text') {
+           const textNode = new Konva.Text({
+             text: item.content,
+             x: xObj,
+             y: y + (40 - item.height) / 2, 
+             fontSize: 24,
+             fontFamily: "Montserrat, sans-serif",
+             fontStyle: "500",
+             fill: "#1e293b", 
+           });
+           storyGroup.add(textNode);
+        } else {
+           this.renderBlank(storyGroup, xObj, y, item.width, item.content);
+        }
+        xObj += item.width + 10; 
       });
 
-      if (x + blankText.width() > marginX + maxWidth) {
-        x = marginX;
-        y += lineHeight;
-        blankText.x(x);
-        blankText.y(y);
+      y += lineHeight;
+      currentLine = [];
+      currentLineWidth = 0;
+    };
+
+    items.forEach(item => {
+      const potentialWidth = currentLineWidth + item.width + (currentLine.length > 0 ? 10 : 0);
+      
+      if (potentialWidth > maxWidth) {
+        flushLine();
       }
+      
+      if (currentLine.length > 0) currentLineWidth += 10;
+      currentLineWidth += item.width;
+      currentLine.push(item);
+    });
+    flushLine();
+
+    const cardHeight = y + 40; 
+    const startY = (window.innerHeight - cardHeight) / 2;
+
+    this.cardLayout = {
+        x: startX - 40,
+        y: startY - 40,
+        width: maxWidth + 80,
+        height: cardHeight + 40
+    };
+
+    const card = new Konva.Rect({
+        x: this.cardLayout.x,
+        y: this.cardLayout.y,
+        width: this.cardLayout.width,
+        height: this.cardLayout.height,
+        fill: "white",
+        cornerRadius: 20,
+        shadowColor: "rgba(0,0,0,0.1)",
+        shadowBlur: 20,
+        shadowOffsetY: 10,
+        stroke: "#e2e8f0",
+        strokeWidth: 1
+    });
+
+    storyGroup.position({ x: startX, y: startY });
+
+    this.group.add(card, storyGroup);
+    this.group.getLayer()?.batchDraw();
+  }
+
+  private renderBlank(container: Konva.Group, x: number, y: number, width: number, type: string) {
+      const blankLine = new Konva.Line({
+        points: [x, y + 32, x + width, y + 32],
+        stroke: "#4f46e5",
+        strokeWidth: 2,
+      });
+
+      const clickRect = new Konva.Rect({
+          x: x,
+          y: y,
+          width: width,
+          height: 40,
+          fill: "transparent",
+      });
+
+      const blankText = new Konva.Text({
+        text: "", 
+        x: x + 5,
+        y: y + 5,
+        fontSize: 24,
+        fontFamily: "Montserrat",
+        fill: "#4f46e5",
+        fontStyle: "bold",
+      });
 
       const typeLabel = new Konva.Text({
         text: type,
-        x: blankText.x(),
-        y: blankText.y() + blankText.height(),
-        fontSize: 14,
-        fontFamily: "system-ui",
-        fill: "#2563eb",
+        x: x,
+        y: y + 36, 
+        width: width,
+        align: "center",
+        fontSize: 12,
+        fontFamily: "Montserrat",
+        fill: "#64748b",
         fontStyle: "italic",
-        name: "story-node",
       });
 
-      blankText.on("click tap", () => {
+      clickRect.on("mouseenter", () => document.body.style.cursor = "pointer");
+      clickRect.on("mouseleave", () => document.body.style.cursor = "default");
+      clickRect.on("click tap", () => {
         const existing = this.blanks.find((b) => b.node === blankText);
         if (existing?.filled) return;
         if (this.isPopupOpen) return;
@@ -309,74 +413,12 @@ export default class MadLibPhaseView {
       });
 
       this.blanks.push({ node: blankText, type, filled: false, typeNode: typeLabel });
-      this.group.add(blankText);
-      this.group.add(typeLabel);
-
-      x += blankText.width();
-
-      lastIndex = placeholderRe.lastIndex;
-    }
-
-    // Render any trailing text after the last placeholder
-    const tail = this.storyTemplate.slice(lastIndex);
-    renderTextSegment(tail);
-
-    this.group.getLayer()?.batchDraw();
+      container.add(blankLine, blankText, typeLabel, clickRect);
   }
 
   /** ===========================
-   *  WORD BANK (OPTIONAL)
-   *  ===========================
-   */
-
-  /**
-   * @brief Draws the selectable word bank at the bottom of the screen.
-   *
-   * NOTE: In the current version, this is not used (call is commented out).
-   *       However, it still works and can be re-enabled if you want a more
-   *       traditional word bank selection flow instead of popups per blank.
-   */
-  private drawWordBank(): void {
-    // Starting Y coordinate for the word bank area
-    const startY = window.innerHeight - 200;
-    // Left margin for word bank
-    const startX = window.innerWidth * 0.1;
-    const spacingX = 140; // horizontal spacing between words
-    const spacingY = 50;  // vertical spacing between rows
-
-    // How many words per row can we fit in the central 80% of the width?
-    const wordsPerRow = Math.floor((window.innerWidth * 0.8) / spacingX);
-
-    this.wordBank.forEach((item, index) => {
-      const row = Math.floor(index / wordsPerRow);
-      const col = index % wordsPerRow;
-
-      const node = new Konva.Text({
-        text: item.word,
-        x: startX + col * spacingX,
-        y: startY + row * spacingY,
-        fontSize: 24,
-        fill: "#16a34a",
-        fontStyle: "bold",
-        shadowColor: "rgba(0,0,0,0.2)",
-        shadowBlur: 3,
-      });
-
-      // When the player clicks a word tile, bubble the event to the controller
-      node.on("click tap", () => {
-        this.wordClickHandler?.(item.word, item.type);
-      });
-
-      this.wordTiles.push({ node, word: item.word, type: item.type });
-      this.group.add(node);
-    });
-
-    this.group.getLayer()?.batchDraw();
-  }
-
-  /** ===========================
-   *  HUD: HEARTS + FEEDBACK
-   *  ===========================
+   * HUD: HEARTS + FEEDBACK
+   * ===========================
    */
 
   /**
@@ -386,34 +428,57 @@ export default class MadLibPhaseView {
    * so that positions are updated for new window sizes.
    */
   private drawHUD(): void {
-    // Heart display in the top-right area
+    const cardRight = this.cardLayout.x + this.cardLayout.width;
+    const cardTop = this.cardLayout.y;
+    
     this.heartText = new Konva.Text({
       text: `❤️ Hearts: ${this.hearts}`,
-      x: window.innerWidth - 250,
-      y: 30,
-      fontSize: 22,
-      fontFamily: "system-ui",
+      fontSize: 24,
+      fontFamily: "Montserrat",
+      fontStyle: "bold",
       fill: "#dc2626",
+      shadowColor: "white",
+      shadowBlur: 2,
+    });
+    
+    this.heartText.position({
+        x: cardRight - this.heartText.width(),
+        y: cardTop - 35
     });
 
-    // Feedback message in the top center (status of actions/checks)
     this.feedbackText = new Konva.Text({
       text: "",
-      x: window.innerWidth / 2 - 150,
-      y: 30,
-      width: 300,
-      fontSize: 20,
-      fontFamily: "system-ui",
-      fill: "#333",
+      width: 400,
+      fontSize: 24,
+      fontFamily: "Montserrat",
+      fontStyle: "bold",
+      fill: "#1e293b",
       align: "center",
+      shadowColor: "white",
+      shadowBlur: 10,
+    });
+
+    this.feedbackText.position({
+        x: this.cardLayout.x + (this.cardLayout.width - 400) / 2,
+        y: cardTop - 40
     });
 
     this.group.add(this.heartText, this.feedbackText);
   }
 
+  /**
+   * @brief Allows external code (controller) to register a callback that fires
+   * whenever any blank in the story is filled.
+   *
+   * @param cb Function called with no arguments when a blank is filled.
+   */
+  onBlankFilled(cb: () => void): void {
+    this.blankFilledHandler = cb;
+  }
+
   /** ===========================
-   *  BLANK FILLING LOGIC
-   *  ===========================
+   * BLANK FILLING LOGIC
+   * ===========================
    */
 
   /**
@@ -424,59 +489,50 @@ export default class MadLibPhaseView {
    * @return `true` if a matching blank was found and filled, `false` otherwise.
    *
    * Behavior:
-   *  - If there is an unfilled blank of that `type`, it is filled with `word`.
-   *  - The used word tile is removed from the word bank (if present).
-   *  - A "Correct!" feedback message is shown.
-   *  - If no matching blank is found, the player loses a heart and receives
-   *    an error feedback message about the wrong type.
+   * - If there is an unfilled blank of that `type`, it is filled with `word`.
+   * - The used word tile is removed from the word bank (if present).
+   * - A "Correct!" feedback message is shown.
+   * - If no matching blank is found, the player loses a heart and receives
+   * an error feedback message about the wrong type.
    */
   fillNextBlank(word: string, type: string): boolean {
-    // Find the first blank that:
-    //   - is not yet filled, and
-    //   - expects the same type as the provided word
     const blank = this.blanks.find((b) => !b.filled && b.type === type);
     if (!blank) {
-      // No matching blank found → deduct a heart and show reason
       this.loseHeart(`Wrong type! Looking for a ${type}`);
       return false;
     }
-
-    // Fill the blank text with the chosen word
-    blank.node.text(word + " ");
-    blank.node.fill("#111");
-    blank.node.fontStyle("normal");
+    blank.node.text(word);
     blank.filled = true;
+    
+    if(blank.typeNode) blank.typeNode.visible(false);
 
-    // Remove used word from word bank display
-    const tile = this.wordTiles.find((t) => t.word === word && t.type === type);
-    if (tile) {
-      tile.node.destroy();
-      this.wordTiles = this.wordTiles.filter((t) => t !== tile);
-    }
+    this.wordTiles = this.wordTiles.filter((t) => {
+        if(t.word === word && t.type === type) {
+            t.node.destroy();
+            return false;
+        }
+        return true;
+    });
 
-    // Positive feedback to the player
     this.flashFeedback("✅ Correct!");
     this.group.getLayer()?.batchDraw();
 
-    // Notify the controller so it can check if all blanks are filled
-    if (this.blankFilledHandler) {
-      this.blankFilledHandler();
-    }
+    if (this.blankFilledHandler) this.blankFilledHandler();
     return true;
   }
 
   /** ===========================
-   *  HEART / FEEDBACK SYSTEM
-   *  ===========================
+   * HEART / FEEDBACK SYSTEM
+   * ===========================
    */
 
   /**
    * @brief Deducts a heart and shows a feedback message.
    *
    * This method is used whenever the player:
-   *  - selects a wrong type,
-   *  - runs out of time on a popup,
-   *  - or otherwise triggers an error condition.
+   * - selects a wrong type,
+   * - runs out of time on a popup,
+   * - or otherwise triggers an error condition.
    *
    * If hearts drop to 0 or below, this method triggers the mini-game
    * selection flow via `triggerMiniGame()`, and on success/resume,
@@ -485,21 +541,23 @@ export default class MadLibPhaseView {
    * @param message A readable explanation (shown to the player) of what went wrong.
    */
   private loseHeart(message: string): void {
-    // Decrement hearts and show why
     this.hearts--;
     this.flashFeedback(`❌ ${message}`);
-    this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+    this.updateHeartText();
 
-    // When hearts are gone, redirect to mini-game selection
     if (this.hearts <= 0) {
       this.triggerMiniGame(() => {
-        // If redirect fails and fallback is used, at least restore 1 heart
         this.hearts = 1;
-        this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+        this.updateHeartText();
       });
     }
-
     this.group.getLayer()?.batchDraw();
+  }
+
+  private updateHeartText() {
+      this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+      const cardRight = this.cardLayout.x + this.cardLayout.width;
+      this.heartText.x(cardRight - this.heartText.width());
   }
 
   /**
@@ -519,25 +577,24 @@ export default class MadLibPhaseView {
   }
 
   /** ===========================
-   *  POPUP CHOICE SYSTEM
-   *  ===========================
+   * POPUP CHOICE SYSTEM
+   * ===========================
    */
 
   /**
    * @brief Opens a multiple-choice popup for the given blank.
    *
    * The popup:
-   *  - dims the background with a semi-transparent overlay.
-   *  - shows a card asking for the correct word type (e.g., "noun").
-   *  - shows two buttons: one correct word, one incorrect word.
-   *  - starts a 10-second timer; if the player does not choose in time,
-   *    they lose a heart and the popup closes.
+   * - dims the background with a semi-transparent overlay.
+   * - shows a card asking for the correct word type (e.g., "noun").
+   * - shows two buttons: one correct word, one incorrect word.
+   * - starts a 10-second timer; if the player does not choose in time,
+   * they lose a heart and the popup closes.
    *
    * @param blankNode    The Konva.Text node representing the blank in the story.
    * @param expectedType The type the blank expects (e.g., "noun", "verb").
    */
   private showChoicePopup(blankNode: Konva.Text, expectedType: string): void {
-    // Do not open if another popup is currently active
     if (this.isPopupOpen) return;
     this.isPopupOpen = true;
 
@@ -545,368 +602,228 @@ export default class MadLibPhaseView {
     const stage = baseLayer?.getStage();
     if (!stage || !baseLayer) return;
 
-    // Find one "correct" candidate from the word bank that matches expectedType
     const correct = this.wordBank.find((w) => w.type === expectedType);
     if (!correct) return;
 
-    // Find a pool of candidate wrong words (type != expectedType)
     const incorrectPool = this.incorrectWords.filter((w) => w.type !== expectedType);
     const wrong = incorrectPool[Math.floor(Math.random() * incorrectPool.length)];
-
-    // Randomize ordering so the correct one is not always first
     const options = Math.random() < 0.5 ? [correct, wrong] : [wrong, correct];
 
-    // Create a dedicated layer for the popup so it sits above everything else
     const popupLayer = new Konva.Layer({ listening: true });
     this.activePopupLayer = popupLayer;
     stage.add(popupLayer);
 
-    // Dimmed overlay (visual only; does not capture events)
     const overlay = new Konva.Rect({
       x: 0,
       y: 0,
       width: stage.width(),
       height: stage.height(),
-      fill: "rgba(0,0,0,0.3)",
-      listening: false,
+      fill: "rgba(30, 41, 59, 0.6)",
+      listening: true,
     });
 
-    // Centered popup card
     const popup = new Konva.Rect({
-      x: stage.width() / 2 - 180,
-      y: stage.height() / 2 - 100,
-      width: 360,
-      height: 200,
+      x: stage.width() / 2 - 200,
+      y: stage.height() / 2 - 120,
+      width: 400,
+      height: 240,
       fill: "#ffffff",
-      stroke: "#2563eb",
-      strokeWidth: 2,
-      cornerRadius: 16,
+      cornerRadius: 20,
       shadowColor: "rgba(0,0,0,0.3)",
-      shadowBlur: 10,
+      shadowBlur: 30,
       listening: true,
     });
 
     const title = new Konva.Text({
-      text: `Choose the correct ${expectedType}`,
+      text: `Select a ${expectedType.toUpperCase()}`,
       x: popup.x(),
-      y: popup.y() + 20,
+      y: popup.y() + 25,
       width: popup.width(),
       align: "center",
-      fontSize: 20,
-      fontFamily: "system-ui",
-      fill: "#111",
+      fontSize: 22,
+      fontFamily: "Montserrat",
+      fontStyle: "bold",
+      fill: "#4f46e5",
     });
 
     popupLayer.add(overlay, popup, title);
 
-  // Create interactive buttons for each option in the popup
     options.forEach((opt, i) => {
       const btnGroup = new Konva.Group({
-        x: popup.x() + 40,
-        y: popup.y() + 70 + i * 60,
-        width: popup.width() - 80,
-        height: 50,
+        x: popup.x() + 50,
+        y: popup.y() + 80 + i * 70,
+        width: popup.width() - 100,
+        height: 55,
         listening: true,
       });
 
       const btnRect = new Konva.Rect({
         width: btnGroup.width(),
         height: btnGroup.height(),
-        fill: "#4f46e5",
-        opacity: 1,
-        cornerRadius: 8,
-        shadowColor: "rgba(0,0,0,0.25)",
-        shadowBlur: 4,
-        shadowOffsetY: 2,
+        fill: "#f8fafc",
+        stroke: "#e2e8f0",
+        strokeWidth: 2,
+        cornerRadius: 12,
       });
 
       const btnLabel = new Konva.Text({
         text: opt.word,
         width: btnGroup.width(),
         align: "center",
-        y: 12,
-        fontSize: 22,
-        fill: "#fff",
-        fontFamily: "system-ui",
+        y: 16,
+        fontSize: 20,
+        fontFamily: "Montserrat",
+        fill: "#334155",
+        fontStyle: "600"
       });
 
-      // Simple hover effect for feedback
       btnGroup.on("mouseenter", () => {
         document.body.style.cursor = "pointer";
-        btnRect.fill("#4338ca");
+        btnRect.fill("#e0e7ff");
+        btnRect.stroke("#6366f1");
         popupLayer.batchDraw();
       });
       btnGroup.on("mouseleave", () => {
         document.body.style.cursor = "default";
-        btnRect.fill("#4f46e5");
+        btnRect.fill("#f8fafc");
+        btnRect.stroke("#e2e8f0");
         popupLayer.batchDraw();
       });
 
-      // When a button is clicked, decide correctness and fill the blank accordingly
       btnGroup.on("click tap", () => {
-        // Clear any running countdowns so the timeout won't also fire later
-        if (this.popupCountdownInterval) {
-          clearInterval(this.popupCountdownInterval);
-          this.popupCountdownInterval = null;
-        }
-        if (this.popupTimerId) {
-          clearTimeout(this.popupTimerId);
-          this.popupTimerId = null;
-        }
-
+        this.clearPopupTimers();
         const correctChoice = opt.type === expectedType;
-
-        if (correctChoice) {
-          // Player picked correct word
-          this.fillBlankWithWord(blankNode, opt.word, true);
-        } else {
-          // Player picked wrong word — we still fill with the correct one,
-          // but penalize them via loseHeart() inside fillBlankWithWord().
-          this.fillBlankWithWord(blankNode, correct.word, false);
-        }
-
-        // Fade out and then destroy the popup layer for a polished exit
-        popupLayer.to({
-          opacity: 0,
-          duration: 0.25,
-          onFinish: () => {
-            popupLayer.destroy();
-            this.isPopupOpen = false;
-            this.activePopupLayer = null;
-          },
-        });
-        stage.batchDraw();
+        this.fillBlankWithWord(blankNode, correctChoice ? opt.word : correct.word, correctChoice);
+        this.closePopup(popupLayer);
       });
 
       btnGroup.add(btnRect, btnLabel);
       popupLayer.add(btnGroup);
     });
 
-    // Ensure the popup is in front of other layers
-    popupLayer.moveToTop();
     popupLayer.batchDraw();
-
-    // Start the 10-second countdown timer for this popup
     this.startPopupTimer(blankNode, expectedType, popupLayer);
+  }
+
+  private clearPopupTimers() {
+      if (this.popupCountdownInterval) {
+          clearInterval(this.popupCountdownInterval);
+          this.popupCountdownInterval = null;
+      }
+      if (this.popupTimerId) {
+          clearTimeout(this.popupTimerId);
+          this.popupTimerId = null;
+      }
+  }
+
+  private closePopup(layer: Konva.Layer) {
+      layer.destroy();
+      this.isPopupOpen = false;
+      this.activePopupLayer = null;
   }
 
   /**
    * @brief Fills a specific blank with a given word and handles correctness effects.
    *
    * This is called from the popup logic:
-   *  - For correct choices: `correct = true`.
-   *  - For wrong choices: `correct = false` and we apply a heart penalty.
+   * - For correct choices: `correct = true`.
+   * - For wrong choices: `correct = false` and we apply a heart penalty.
    *
    * @param blankNode The specific blank being filled.
    * @param word      The word to write into that blank.
    * @param correct   Whether the choice is considered correct.
    */
   private fillBlankWithWord(blankNode: Konva.Text, word: string, correct: boolean): void {
-    // Replace underscores with the chosen word + trailing space
-    blankNode.text(word + " ");
-    blankNode.fill("#111");
-    blankNode.fontStyle("normal");
+    blankNode.text(word);
+    blankNode.fill(correct ? "#4f46e5" : "#dc2626");
 
-    // Update our internal blank tracking
     const b = this.blanks.find((bb) => bb.node === blankNode);
     if (b) {
       b.filled = true;
-
-      // If there is a type label under this blank, remove it now
-      if (b.typeNode) {
-        b.typeNode.destroy();
-        b.typeNode = undefined;
-      }
+      if (b.typeNode) b.typeNode.visible(false);
     }
 
-    // Visual feedback and heart penalty (if incorrect)
     if (correct) {
       this.flashFeedback("✅ Correct!");
     } else {
-      this.flashFeedback("❌ Wrong! But here’s the correct word.");
-      this.wrongFlashAnimation(blankNode);
-      this.loseHeart("That was the wrong word!");
+      this.flashFeedback("❌ Wrong choice!");
+      this.loseHeart("Wrong word choice!");
+      setTimeout(() => {
+          blankNode.fill("#4f46e5");
+          this.group.getLayer()?.batchDraw();
+      }, 1000);
     }
 
-    // After filling, we may need to reflow lines, since the word width differs
-    this.relayoutStory();
     this.group.getLayer()?.batchDraw();
 
-    // Always notify controller that a blank was filled
-    if (this.blankFilledHandler) {
-      this.blankFilledHandler();
-    }
-  }
-
-  /**
-   * @brief Briefly flashes the blank in red to indicate a mistake, then restores its color.
-   *
-   * @param node The text node representing the blank that was just filled incorrectly.
-   */
-  private wrongFlashAnimation(node: Konva.Text): void {
-    const origColor = node.fill();
-    node.fill("#dc2626");
-    this.group.getLayer()?.batchDraw();
-    setTimeout(() => {
-      node.fill(origColor as string);
-      this.group.getLayer()?.batchDraw();
-    }, 800);
-  }
-
-  /**
-   * @brief Repositions all story text + blanks to maintain readable line wrapping.
-   *
-   * We do this after blanks are filled because:
-   *   - Filled words may have different width than "__________".
-   *   - That can cause lines to overflow or look awkward.
-   *
-   * Behavior:
-   *  - Iterates over all text nodes that are part of the story.
-   *  - Calculates new X/Y positions with simple word wrapping.
-   *  - Repositions type labels so they remain under their blanks.
-   *  - Skips non-story HUD elements (hearts, feedback).
-   */
-  private relayoutStory(): void {
-    const paragraphY = 100;
-    const lineHeight = 40;
-    const marginX = window.innerWidth * 0.05;
-    const maxWidth = window.innerWidth * 0.9;
-
-    let x = marginX;
-    let y = paragraphY;
-
-    // These nodes should not be moved during story reflow:
-    // - Heart counter
-    // - Feedback message
-    // - Type labels under blanks (we reposition those separately)
-    const excludedNodes = new Set<Konva.Node>([
-      this.heartText,
-      this.feedbackText,
-      ...((this.blanks.map((b) => b.typeNode).filter(Boolean) as Konva.Text[])),
-    ]);
-
-    // Iterate over all children; reposition only story text nodes
-    this.group.getChildren().forEach((node: Konva.Node) => {
-      if (!(node instanceof Konva.Text)) return;
-      if (excludedNodes.has(node)) return; // skip HUD + type labels
-
-      // Wrap to next line if we exceed maxWidth
-      if (x + node.width() > marginX + maxWidth) {
-        x = marginX;
-        y += lineHeight;
-      }
-
-      node.position({ x, y });
-      x += node.width();
-    });
-
-    // Now reposition all type labels to remain under their blanks
-    this.blanks.forEach((b) => {
-      const { node: blank, typeNode } = b;
-      if (!typeNode) return;
-
-      const labelX = blank.x() + blank.width() / 2 - typeNode.width() / 2;
-      const labelY = blank.y() + blank.height() + 4;
-
-      typeNode.position({ x: labelX, y: labelY });
-    });
-
-    this.group.getLayer()?.batchDraw();
+    if (this.blankFilledHandler) this.blankFilledHandler();
   }
 
   /** ===========================
-   *  POPUP TIMER (10 SECONDS)
-   *  ===========================
+   * POPUP TIMER (10 SECONDS)
+   * ===========================
    */
 
   /**
    * @brief Starts a 10-second countdown timer for the active popup.
    *
    * Behavior:
-   *  - Shows a "⏳ N" timer near the popup card.
-   *  - Updates every second via `setInterval`.
-   *  - After 10 seconds, if the popup is still open:
-   *      - The timer stops.
-   *      - The player loses a heart.
-   *      - A "Time's up!" feedback message is shown.
-   *      - The popup fades out and closes.
+   * - Shows a "⏳ N" timer near the popup card.
+   * - Updates every second via `setInterval`.
+   * - After 10 seconds, if the popup is still open:
+   * - The timer stops.
+   * - The player loses a heart.
+   * - A "Time's up!" feedback message is shown.
+   * - The popup fades out and closes.
    *
    * @param blankNode    The blank associated with this popup (not changed here).
    * @param expectedType The type required for that blank (not changed here).
    * @param popupLayer   The top layer containing this popup UI.
    */
-  private startPopupTimer(
-    _blankNode: Konva.Text,
-    _expectedType: string,
-    popupLayer: Konva.Layer
-  ): void {
-    // Clear any previous timer to avoid overlapping countdowns
-    if (this.popupTimerId) {
-      clearTimeout(this.popupTimerId);
-      this.popupTimerId = null;
-    }
+  private startPopupTimer(_blankNode: Konva.Text, _expectedType: string, popupLayer: Konva.Layer): void {
+    this.clearPopupTimers();
 
-    // Create an on-screen countdown text
     const timerText = new Konva.Text({
-      text: "⏳ 10",
+      text: "10",
       x: popupLayer.width() / 2 - 20,
-      y: popupLayer.height() / 2 - 120,
-      fontSize: 22,
-      fontFamily: "system-ui",
-      fill: "#dc2626",
+      y: popupLayer.height() / 2 + 130,
+      fontSize: 24,
+      fontFamily: "Montserrat",
+      fontStyle: "bold",
+      fill: "#94a3b8",
     });
     popupLayer.add(timerText);
-    popupLayer.batchDraw();
 
     let secondsLeft = 10;
-
-    // Interval updates timerText every second. Stored on the instance so
-    // it can be cleared from other code paths (e.g., when a choice is made).
     this.popupCountdownInterval = window.setInterval(() => {
       secondsLeft--;
-      timerText.text(`⏳ ${secondsLeft}`);
+      timerText.text(String(secondsLeft));
+      if(secondsLeft <= 3) timerText.fill("#dc2626");
       popupLayer.batchDraw();
     }, 1000);
 
-    // Timeout fires once after 10 seconds to handle time expiration
     this.popupTimerId = window.setTimeout(() => {
-      if (this.popupCountdownInterval) {
-        clearInterval(this.popupCountdownInterval);
-        this.popupCountdownInterval = null;
-      }
-      this.popupTimerId = null;
-
-      // Inform the player via feedback + heart penalty
+      this.clearPopupTimers();
       this.flashFeedback("⏰ Time's up!");
       this.loseHeart("You ran out of time!");
-
-      // Fade out the popup, then destroy its layer and reset popup flags
-      popupLayer.to({
-        opacity: 0,
-        duration: 0.25,
-        onFinish: () => {
-          popupLayer.destroy();
-          this.isPopupOpen = false;
-          this.activePopupLayer = null;
-        },
-      });
+      this.closePopup(popupLayer);
     }, 10000);
   }
 
   /** ===========================
-   *  MINI-GAME REDIRECT
-   *  ===========================
+   * MINI-GAME REDIRECT
+   * ===========================
    */
 
   /**
    * @brief Redirects to the mini-game selection screen when hearts run out.
    *
    * The logic:
-   *  1. Save the current hearts to `sessionStorage` under "madlib_prev_hearts".
-   *  2. Build a URL to `/index.html?screen=miniGameSelect`.
-   *  3. Navigate window.location to that URL.
-   *  4. If anything fails (URL construction, sessionStorage in strict contexts),
-   *     call `onResume()` to allow fallback (e.g., resume game locally).
+   * 1. Save the current hearts to `sessionStorage` under "madlib_prev_hearts".
+   * 2. Build a URL to `/index.html?screen=miniGameSelect`.
+   * 3. Navigate window.location to that URL.
+   * 4. If anything fails (URL construction, sessionStorage in strict contexts),
+   * call `onResume()` to allow fallback (e.g., resume game locally).
    *
    * The App class will interpret `screen=miniGameSelect` and show the
    * mini-game selection UI. After mini-game completion, hearts can be
@@ -916,32 +833,23 @@ export default class MadLibPhaseView {
    */
   private triggerMiniGame(onResume: () => void): void {
     try {
-      // Persist current hearts for restore when returning from mini-game
       try {
-        console.log("MadLibPhaseView.triggerMiniGame: saving madlib_prev_hearts ->", this.hearts);
         sessionStorage.setItem("madlib_prev_hearts", String(this.hearts));
       } catch (e) {
-        console.warn("MadLibPhaseView.triggerMiniGame: failed to write sessionStorage", e);
-        // If session storage fails, we still proceed with the redirect.
+        console.warn("Storage failed", e);
       }
-
-      // Build URL pointing back to the main app entry (index.html)
       const url = new URL("/index.html", window.location.origin);
       url.searchParams.set("screen", "miniGameSelect");
-
-      // Navigate to mini-game selection; App will handle the rest
       window.location.href = url.toString();
     } catch (err) {
-      // If anything goes wrong (e.g., invalid URL, restricted environment),
-      // just call onResume to let the caller restore state locally.
-      console.error("Failed to redirect to mini game selection, resuming game instead.", err);
+      console.error("Redirect failed", err);
       onResume();
     }
   }
 
   /** ===========================
-   *  HEART SETTERS / GETTERS
-   *  ===========================
+   * HEART SETTERS / GETTERS
+   * ===========================
    */
 
   /**
@@ -955,7 +863,7 @@ export default class MadLibPhaseView {
    */
   setHearts(n: number): void {
     this.hearts = n;
-    if (this.heartText) this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+    this.updateHeartText();
     this.group.getLayer()?.batchDraw();
   }
 
@@ -971,13 +879,13 @@ export default class MadLibPhaseView {
     if (n <= 0) return;
     this.hearts += n;
     this.flashFeedback(`💖 Gained ${n} heart${n > 1 ? "s" : ""}!`);
-    this.heartText.text(`❤️ Hearts: ${this.hearts}`);
+    this.updateHeartText();
     this.group.getLayer()?.batchDraw();
   }
 
   /** ===========================
-   *  SIMPLE HELPERS & EVENTS
-   *  ===========================
+   * SIMPLE HELPERS & EVENTS
+   * ===========================
    */
 
   /**
@@ -995,7 +903,7 @@ export default class MadLibPhaseView {
    * @param cb Handler with `(word, type)` parameters.
    *
    * NOTE: If `drawWordBank()` is not invoked, this handler will never be used.
-   *       Popup logic currently handles most interaction instead.
+   * Popup logic currently handles most interaction instead.
    */
   onWordClicked(cb: (word: string, type: string) => void): void {
     this.wordClickHandler = cb;
@@ -1005,32 +913,32 @@ export default class MadLibPhaseView {
    * @brief Handles window resize: rebuilds the story and HUD.
    *
    * This is a blunt approach:
-   *  - Destroys all child nodes.
-   *  - Reconstructs the story from the original template and wordBank.
-   *  - Rebuilds the HUD.
-   *  - Restores hearts and retains the blank-filled callback.
+   * - Destroys all child nodes.
+   * - Reconstructs the story from the original template and wordBank.
+   * - Rebuilds the HUD.
+   * - Restores hearts and retains the blank-filled callback.
    *
    * NOTE: This does NOT re-fill previously filled blanks yet; it simply
-   *       redraws the story from the original template. If you want to
-   *       fully preserve filled state across resizes, you would need to
-   *       store which blanks had which words and reapply them here.
+   * redraws the story from the original template. If you want to
+   * fully preserve filled state across resizes, you would need to
+   * store which blanks had which words and reapply them here.
    */
   private onResize(): void {
     const prevHandler = this.blankFilledHandler;
     const prevHearts = this.hearts;
 
-    // Remove all render nodes and reset blank tracking
     this.group.destroyChildren();
     this.blanks = [];
 
-    // Re-render the story and HUD
+    this.createBackground();
+    this.group.add(this.backgroundGroup);
+    
     this.drawStory();
-    // this.drawWordBank(); // optional, currently disabled
-    this.drawHUD();
+    this.drawHUD(); 
 
-    // Restore the previously registered completion handler and hearts
     this.blankFilledHandler = prevHandler;
     this.hearts = prevHearts;
+    this.updateHeartText();
   }
 
   /**

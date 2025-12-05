@@ -8,6 +8,14 @@ export default class ResultsScreenController {
   constructor(app: ScreenSwitcher) {
     this.app = app;
     this.view = new ResultsScreenView();
+
+    this.view.onHomeClicked(() => {
+      this.app.goHome();
+    });
+  }
+
+  setFinalScores(wordLinkScore: number, heartsRemaining: number): void {
+    this.view.updateScores(wordLinkScore, heartsRemaining);
   }
 
   getView(): ResultsScreenView {
@@ -22,7 +30,6 @@ export default class ResultsScreenController {
     this.view.hide();
   }
 
-  // Pass resize events to view
   onResize(width: number, height: number): void {
     if (typeof (this.view as any).onResize === "function") {
       (this.view as any).onResize(width, height);
