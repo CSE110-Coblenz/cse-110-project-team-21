@@ -81,6 +81,36 @@ export default class WordLinkController {
     this.view.updateHUD(this.score, this.hearts);
   }
 
+  /** Restore full state from saved progress (used when returning from mini-games) */
+  restoreState(state: { hearts: number; score: number; currentWordIndex: number; usedHints?: number }): void {
+    console.log('WordLinkController.restoreState: restoring ->', state);
+    
+    this.hearts = state.hearts;
+    this.score = state.score;
+    this.currentWordIndex = state.currentWordIndex;
+    this.usedHints = state.usedHints ?? 0;
+    
+    // Redraw all previously solved words to the grid
+    for (let i = 0; i < this.currentWordIndex; i++) {
+      const solvedWord = this.placedWords[i];
+      this.view.addWordToGrid(solvedWord);
+    }
+    
+    // Reload the current word based on restored index
+    this.loadCurrentWord();
+    this.view.updateHUD(this.score, this.hearts);
+  }
+
+  /** Get current progress state (for debugging or external saving) */
+  getState(): { hearts: number; score: number; currentWordIndex: number; usedHints: number } {
+    return {
+      hearts: this.hearts,
+      score: this.score,
+      currentWordIndex: this.currentWordIndex,
+      usedHints: this.usedHints,
+    };
+  }
+
   /** === Core gameplay === */
 
   /** Loads and draws the current target word. */
@@ -280,12 +310,25 @@ const word = this.placedWords[this.currentWordIndex].word;
 
   /** Mini-game placeholder when hearts reach 0. */
   private triggerMiniGame(onResume: () => void): void {
-    // Persist current hearts so we can restore exact state when returning.
+    // Persist full WordLink state so we can restore exact progress when returning.
     try {
-      console.log('WordLinkController.triggerMiniGame: saving wordlink_prev_hearts ->', this.hearts);
-      sessionStorage.setItem("wordlink_prev_hearts", String(this.hearts));
+      const stateToSave = {
+        hearts: this.hearts,
+        score: this.score,
+        currentWordIndex: this.currentWordIndex,
+        usedHints: this.usedHints,
+      };
+      console.log('WordLinkController.triggerMiniGame: saving wordlink_state ->', stateToSave);
+      sessionStorage.setItem("wordlink_state", JSON.stringify(stateToSave));
+      
+      // Also save the storyData so it survives the page reload
+      const storyData = (this.app as any).storyData;
+      if (storyData) {
+        console.log('WordLinkController.triggerMiniGame: saving storyData');
+        sessionStorage.setItem("storyData", JSON.stringify(storyData));
+      }
     } catch (e) {
-      // ignore storage errors
+      console.warn('Failed to save WordLink state to sessionStorage:', e);
     }
 
     // Redirect to the mini-game selection page and include a returnTo marker
