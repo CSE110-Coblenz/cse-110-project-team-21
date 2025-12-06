@@ -25,7 +25,7 @@ export class WordBubbleGameView {
     private timeText  = new Konva.Text({ x: 0,  y: 12, fontSize: 18, fill: "#fff" });
 
     // return button
-    private backBtn = new Konva.Label({ x: 16, y: 32 });
+    //private backBtn = new Konva.Label({ x: 16, y: 32 });
     private bubbleNodes = new Map<string, Konva.Group>();
 
     constructor(container: string | HTMLDivElement) {
@@ -43,10 +43,10 @@ export class WordBubbleGameView {
         this.uiLayer.add(this.scoreText, this.heartText, this.timeText);
 
         //Back button only related to UI layer - events are bound in the controller
-        const backRect = new Konva.Rect({ width: 68, height: 28, fill: "#e5e7eb", cornerRadius: 8, opacity: 0.9 });
-        const backTxt  = new Konva.Text({ text: "← Back", fontSize: 16, padding: 6, fill: "#111827" });
-        this.backBtn.add(backRect, backTxt);
-        this.uiLayer.add(this.backBtn);
+        //const backRect = new Konva.Rect({ width: 68, height: 28, fill: "#e5e7eb", cornerRadius: 8, opacity: 0.9 });
+        //const backTxt  = new Konva.Text({ text: "← Back", fontSize: 16, padding: 6, fill: "#111827" });
+        //this.backBtn.add(backRect, backTxt);
+        //this.uiLayer.add(this.backBtn);
 
         // transparent Overlay
         const dim = new Konva.Rect({ x: 0, y: 0, width: WIDTH, height: HEIGHT, fill: "black", opacity: 0.55 });
@@ -67,8 +67,8 @@ export class WordBubbleGameView {
 
     // public event bindings
     onBack(handler: () => void) {
-        this.backBtn.on("click", handler);
-        this.backBtn.on("tap", handler);
+        //this.backBtn.on("click", handler);
+        //this.backBtn.on("tap", handler);
     }
 
     updateHUD(score: number, hearts: number, timeLeft: number) {
@@ -149,26 +149,36 @@ export class WordBubbleGameView {
     }
 
     private fitStage = () => {
-        const scale = 0.8;
-        const w = window.innerWidth * scale;
-        const h = window.innerHeight * scale;
+        const scale = 0.85; // 85% of screen
+        const viewportW = window.innerWidth * scale;
+        const viewportH = window.innerHeight * scale;
 
         const designW = GRID_COLS * CELL + 2 * MARGIN;
         const designH = GRID_ROWS * CELL + HUD_H + 2 * MARGIN;
 
-        const s = Math.min(w / designW, h / designH);
-        this.stage.scale({ x: s, y: s });
-        this.stage.size({ width: designW * s, height: designH * s });
+        // uniform scaling
+        const s = Math.min(viewportW / designW, viewportH / designH);
 
+        // apply scale
+        this.stage.scale({ x: s, y: s });
+        this.stage.size({
+            width: designW * s,
+            height: designH * s,
+        });
+
+        // center the stage
         const el = this.stage.container() as HTMLDivElement;
         el.style.position = "absolute";
         el.style.left = "50%";
-        el.style.top = "40%";
-        el.style.transform = "translate(-50%,-50%)";
-        el.style.background = "#0b1220";
-        el.style.borderRadius = "12px";
-        el.style.boxShadow = "0 0 20px rgba(0,0,0,.35)";
+        el.style.top = "50%";
+        el.style.transform = "translate(-50%, -50%)";
 
+        // frame styling
+        el.style.background = "#0b1220";
+        el.style.borderRadius = "14px";
+        el.style.boxShadow = "0 0 26px rgba(0,0,0,0.45)";
+
+        // global body cleanup
         document.body.style.margin = "0";
         document.body.style.overflow = "hidden";
     };

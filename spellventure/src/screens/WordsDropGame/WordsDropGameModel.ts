@@ -35,10 +35,10 @@ export class WordsDropGameModel {
 
   score = 0;
   hearts = 0;
-  timeLeft = 90;      // seconds
+  timeLeft = 60;      // seconds
   running = false;
 
-  constructor(startTimeSec = 90) {
+  constructor(startTimeSec = 60) {
     this.grid = Array.from({ length: GRID_ROWS }, () =>
       Array.from({ length: GRID_COLS }, () => null)
     );

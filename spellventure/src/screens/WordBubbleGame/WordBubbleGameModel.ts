@@ -19,7 +19,7 @@ export type Bubble = {
     export class WordBubbleGameModel {
         score: number = 0;
         hearts: number = 0;
-        timeLeft: number = 30;
+        timeLeft: number = 60;
         isRunning: boolean = true;
 
         constructor() {}
@@ -27,7 +27,7 @@ export type Bubble = {
         resetGame() {
             this.score = 0;
             this.hearts = 0;
-            this.timeLeft = 30;
+            this.timeLeft = 60;
             this.isRunning = true;
         }
 

@@ -17,4 +17,3 @@ export class MenuScreenView {
     btn.addEventListener("click", () => onStart());
   }
 }
-
