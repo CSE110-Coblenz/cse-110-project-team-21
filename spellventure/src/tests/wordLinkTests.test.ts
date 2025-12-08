@@ -60,6 +60,7 @@ vi.mock("../views/WordLinkView", () => ({
     onRefreshClicked() {}
     onHintClicked() {}
     onLetterClicked() {}
+    onBoxClicked() {}
 
     getGroup() {
       return {
@@ -177,13 +178,14 @@ it("progress persists between words", async () => {
   const WordValidator = await import("../utils/WordValidator");
   vi.spyOn(WordValidator, "isValidEnglishWord").mockResolvedValue(true);
 
+    // Note: words are sorted by length in constructor, so "cat" comes before "raccoon"
     const ctrl = new WordLinkController(fakeApp, [
       { word: "raccoon", type: "noun" },
-      {word: "cat", type: "noun"}
+      { word: "cat", type: "noun"}
     ]);
-    //first word
+    //first word (after sorting: "cat" is first)
     const view = (ctrl as any).view;
-    view.getVisibleWord = vi.fn().mockReturnValue("raccoon");
+    view.getVisibleWord = vi.fn().mockReturnValue("cat");
     (ctrl as any).score = 50;
     (ctrl as any).hearts = 3;
     (ctrl as any).hints = 3;
@@ -192,8 +194,8 @@ it("progress persists between words", async () => {
     const FirstHints = (ctrl as any).hints;
     await(ctrl as any).submitGuess();
 
-    //second word
-    view.getVisibleWord = vi.fn().mockReturnValue("cat");
+    //second word (after sorting: "raccoon" is second)
+    view.getVisibleWord = vi.fn().mockReturnValue("raccoon");
     await (ctrl as any).submitGuess();
 
     const afterSecondScore = (ctrl as any).score;
@@ -229,7 +231,7 @@ it("progress persists between words", async () => {
   expect(removes).toBe(3);
 });
 
-it.skip("rejects valid English words if the length does not match the target word", async () => {
+it("rejects valid English words if the length does not match the target word", async () => {
   const ctrl = new WordLinkController(fakeApp, [
     { word: "trip", type: "noun" }
   ]);

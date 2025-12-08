@@ -52,6 +52,7 @@ vi.mock("../views/WordLinkView", () => {
       onRefreshClicked() {}
       onHintClicked() {}
       onLetterClicked() {}
+      onBoxClicked() {}
 
       getGroup() {
         return {

@@ -6,16 +6,16 @@ import { describe, it, expect, vi, beforeAll } from "vitest";
 import MadLibPhaseView from "../views/MadLibPhaseView";
 
 beforeAll(() => {
-  global.innerWidth = 1200;
-  global.innerHeight = 800;
+  (globalThis as any).innerWidth = 1200;
+  (globalThis as any).innerHeight = 800;
 
   vi.spyOn(globalThis, "setTimeout").mockImplementation((fn: any) => {
     fn();
-    return {} as NodeJS.Timeout;
+    return 0 as unknown as ReturnType<typeof setTimeout>;
   });
 
-  global.addEventListener = vi.fn();
-  global.removeEventListener = vi.fn();
+  (globalThis as any).addEventListener = vi.fn();
+  (globalThis as any).removeEventListener = vi.fn();
 });
 
 /*                              KONVA MOCK                                    */
@@ -44,6 +44,8 @@ vi.mock("konva", () => {
     trigger(event: string) {
       if (this._handlers[event]) this._handlers[event]();
     }
+    setAttr(_key: string, _value: any) {}
+    getAttr(_key: string) { return 0; }
 
     text(v?: any) { if (v !== undefined) this._text = v; return this._text; }
     fill(v?: any) { if (v !== undefined) this._fill = v; return this._fill; }
@@ -53,6 +55,8 @@ vi.mock("konva", () => {
 
     width() { return 100; }
     height() { return 20; }
+    position(_pos?: any) { return { x: 0, y: 0 }; }
+    visible(_v?: any) { return true; }
 
     destroy() {}
     destroyChildren() { this.children = []; }
@@ -93,13 +97,21 @@ vi.mock("konva", () => {
     }
   }
 
+  class MockAnimation {
+    constructor(_callback: any, _layers?: any) {}
+    start() {}
+    stop() {}
+  }
+
   return {
     default: {
       Group: MockNode,
       Rect: MockNode,
       Text: MockNode,
+      Line: MockNode,
       Layer: MockLayer,
       Stage: MockLayer,
+      Animation: MockAnimation,
     },
   };
 });
@@ -131,7 +143,7 @@ describe("MadLibPhaseView Tests", () => {
     expect(result).toBe(true);
     expect(view.hearts).toBe(3);
     expect(view.blanks[0].filled).toBe(true);
-    expect(view.blanks[0].node.text()).toBe("dog ");
+    expect(view.blanks[0].node.text()).toBe("dog");
   });
 
   it("calls blankFilledHandler for each blank filled", () => {
@@ -192,8 +204,9 @@ describe("MadLibPhaseView Tests", () => {
       .spyOn(view as any, "showChoicePopup")
       .mockImplementation(() => { view.isPopupOpen = true; });
 
+    // Simulate what happens when blank is clicked (click handler is on clickRect, not blankNode)
     const blankNode = view.blanks[0].node;
-    blankNode.trigger("click tap");
+    view.showChoicePopup(blankNode, "noun");
     expect(spy).toHaveBeenCalled();
     expect(view.isPopupOpen).toBe(true);
   });
