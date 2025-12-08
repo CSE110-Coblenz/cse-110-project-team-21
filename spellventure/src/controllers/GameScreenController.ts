@@ -211,24 +211,7 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
 
   /** Resume directly to the WordLink phase (used after returning from mini-game) */
   resumeToWordLink(): void {
-    // Try to get storyData from app, or restore from sessionStorage if not available
-    let storyData = (this.app as any).storyData;
-    
-    if (!storyData) {
-      // Attempt to restore from sessionStorage (saved before minigame redirect)
-      try {
-        const savedStoryData = sessionStorage.getItem('storyData');
-        if (savedStoryData) {
-          storyData = JSON.parse(savedStoryData);
-          // Also restore it to app so other parts can access it
-          (this.app as any).storyData = storyData;
-          console.log('resumeToWordLink: restored storyData from sessionStorage');
-        }
-      } catch (err) {
-        console.warn('resumeToWordLink: failed to restore storyData from sessionStorage', err);
-      }
-    }
-    
+    const storyData = (this.app as any).storyData;
     if (!storyData) {
       console.warn('No storyData available to resume WordLink phase.');
       return;
@@ -242,27 +225,27 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
     this.group.add(this.wordLink.getView().getGroup());
     this.layer.batchDraw();
 
-    // Restore full WordLink state if available (saved to sessionStorage before redirect)
+    // Restore previous exact WordLink hearts if available (saved to sessionStorage before redirect)
     try {
-      const savedState = sessionStorage.getItem('wordlink_state');
-      console.log('resumeToWordLink: read wordlink_state from sessionStorage ->', savedState);
-      if (savedState !== null) {
-        const state = JSON.parse(savedState);
-        console.log('resumeToWordLink: parsed state ->', state);
-        
-        // Restore the full state (score, currentWordIndex, hearts, usedHints) + redraw grid
-        if (this.wordLink && typeof (this.wordLink as any).restoreState === 'function') {
-          (this.wordLink as any).restoreState(state);
+      const prev = sessionStorage.getItem('wordlink_prev_hearts');
+      console.log('resumeToWordLink: read wordlink_prev_hearts from sessionStorage ->', prev);
+      if (prev !== null) {
+        const prevN = parseInt(prev, 10);
+        if (!isNaN(prevN)) {
+          try {
+            console.log('resumeToWordLink: setting WordLink hearts to previous value', prevN);
+            (this.wordLink as any).setHearts(prevN);
+          } catch (err) {
+            console.warn('Failed to set previous WordLink hearts:', err);
+          }
         }
-        
-        // Clear stored value once consumed
-        sessionStorage.removeItem('wordlink_state');
       }
+      // Clear stored value once consumed
+      sessionStorage.removeItem('wordlink_prev_hearts');
     } catch (err) {
       console.warn('resumeToWordLink: sessionStorage error', err);
     }
 
-    // Apply any bonus hearts earned from mini-games
     if (this.pendingBonusHearts > 0) {
       console.log('resumeToWordLink: applying pendingBonusHearts ->', this.pendingBonusHearts);
       try {
@@ -271,13 +254,6 @@ private startWordLinkPhase(wordSet: { word: string; type: string }[]): void {
         console.warn('Failed to apply pending bonus hearts to WordLink:', err);
       }
       this.pendingBonusHearts = 0;
-    }
-    
-    // Clear storyData from sessionStorage after successful restore
-    try {
-      sessionStorage.removeItem('storyData');
-    } catch (e) {
-      // ignore
     }
   }
   
